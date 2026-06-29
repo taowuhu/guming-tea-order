@@ -337,7 +337,7 @@ body{
     </div>
   </header>
   <div class="cat-tabs-wrap"><div class="cat-tabs" id="catTabs"></div></div>
-  <div class="menu-scroll" id="menuScroll"><div class="loading">🫖 加载菜单中...</div></div>
+  <div class="menu-scroll" id="menuScroll"><div class="loading">🏺 加载菜单中...</div></div>
   <div class="admin-panel" id="adminPanel"><div class="loading">加载管理面板...</div></div>
 
   <div class="cart-bar" id="cartBar">
@@ -351,7 +351,7 @@ body{
       <div class="cart-total" id="cartTotal">0</div>
       <div class="cart-hint" id="cartHint">选购中...</div>
     </div>
-    <button class="btn-checkout" id="cartCheckout" disabled>去结算</button>
+    <button class="btn-checkout" id="cartCheckout" disabled>提交询价</button>
   </div>
 </div>
 
@@ -364,7 +364,7 @@ body{
 <div class="cart-drawer hidden" id="cartDrawer"><div class="cart-drawer-sheet" id="cartDrawerSheet">
   <div class="cart-drawer-header"><div class="cart-drawer-title">🛒 购物车</div><button class="btn-text" id="cartClearBtn">清空</button></div>
   <div class="cart-drawer-body" id="cartDrawerBody"></div>
-  <div class="cart-drawer-footer"><span class="cart-total" id="cartDrawerTotal">0</span><button class="btn-checkout" id="cartDrawerCheckout" disabled>去结算</button></div>
+  <div class="cart-drawer-footer"><span class="cart-total" id="cartDrawerTotal">0</span><button class="btn-checkout" id="cartDrawerCheckout" disabled>提交询价</button></div>
 </div></div>
 
 <!-- Admin Login Overlay -->
@@ -476,9 +476,9 @@ function renderMenu(){
 }
 
 function imgOrEmoji(imageUrl,itemId){
-  if(imageUrl) return `<img src="${imageUrl}" alt="" onerror="this.parentElement.innerHTML='🫖'">`;
-  const emojis={r1:'🌸',r2:'🍮',r3:'🍇',r4:'🥭',r5:'🍓',f1:'🍊',f2:'🍋',f3:'🍑',f4:'🍉',m1:'🫖',m2:'🍂',m3:'🌾',m4:'💜',c1:'🍵',c2:'🤍',c3:'🍑',p1:'🌿',p2:'❄️',p3:'🌼'};
-  return emojis[itemId]||'🫖';
+  if(imageUrl) return `<img src="${imageUrl}" alt="" onerror="this.parentElement.innerHTML='🏺'">`;
+  const emojis={h1:'🍚',h2:'🫖',h3:'🏺',h4:'🍽️',h5:'☕',t1:'🍛',t2:'🥣',t3:'🍲',t4:'🍜',s1:'🫖',s2:'🍵',s3:'🐉',s4:'🎒',v1:'🏺',v2:'🌸',v3:'🌵',c1:'🖨️',c2:'🎁',c3:'👨‍🎨'};
+  return emojis[itemId]||'🏺';
 }
 
 let catObserver;
@@ -504,7 +504,7 @@ function setupModalListeners(){
 function openDetail(catId,itemId){
   const d=findDrink(catId,itemId);if(!d)return;
   currentDrink={catId,itemId,...d};
-  currentSel={temperature:optionsData.temperature[0]||'正常冰',sweetness:optionsData.sweetness[0]||'标准糖',toppings:[],qty:1};
+  currentSel={temperature:optionsData.temperature[0]||'中号',sweetness:optionsData.sweetness[0]||'白釉',toppings:[],qty:1};
   renderModal();
   document.getElementById('modalOverlay').classList.remove('hidden');document.body.style.overflow='hidden';
 }
@@ -517,17 +517,17 @@ function renderModal(){
   const tp=currentSel.toppings.reduce((s,t)=>{const o=optionsData.toppings.find(x=>x.name===t);return s+(o?o.price:0)},0);
   const total=(d.price+tp)*currentSel.qty;
   document.getElementById('modalBody').innerHTML=`
-    <div class="modal-img-wrap">${d.image_url?`<img src="${d.image_url}" alt="">`:d.emoji||'🫖'}</div>
+    <div class="modal-img-wrap">${d.image_url?`<img src="${d.image_url}" alt="">`:d.emoji||'🏺'}</div>
     <div class="modal-name">${d.name}</div><div class="modal-price-big" id="modalUnitPrice">${d.price+tp}</div>
-    <div class="option-group"><div class="option-label">温度</div><div class="option-chips" id="chips-temp"></div></div>
-    <div class="option-group"><div class="option-label">甜度</div><div class="option-chips" id="chips-sweet"></div></div>
-    <div class="option-group"><div class="option-label">加料</div><div class="option-chips" id="chips-topping"></div></div>`;
+    <div class="option-group"><div class="option-label">尺寸</div><div class="option-chips" id="chips-temp"></div></div>
+    <div class="option-group"><div class="option-label">釉色</div><div class="option-chips" id="chips-sweet"></div></div>
+    <div class="option-group"><div class="option-label">工艺</div><div class="option-chips" id="chips-topping"></div></div>`;
   populateChips('chips-temp',optionsData.temperature.map(t=>({name:t})),currentSel.temperature,false);
   populateChips('chips-sweet',optionsData.sweetness.map(s=>({name:s})),currentSel.sweetness,false);
   populateChips('chips-topping',optionsData.toppings,currentSel.toppings,true);
   document.getElementById('modalFooter').innerHTML=`
     <div class="modal-qty"><button id="modalQtyDown">−</button><span id="modalQtyVal">${currentSel.qty}</span><button id="modalQtyUp">+</button></div>
-    <button class="modal-confirm" id="modalConfirmBtn">加入购物车 ¥${total}</button>`;
+    <button class="modal-confirm" id="modalConfirmBtn">加入询价单 ¥${total}</button>`;
   document.getElementById('modalQtyDown').addEventListener('click',()=>changeQty(-1));
   document.getElementById('modalQtyUp').addEventListener('click',()=>changeQty(1));
   document.getElementById('modalConfirmBtn').addEventListener('click',addToCart);
@@ -552,7 +552,7 @@ function updateModalAfterChange(){
   const total=(currentDrink.price+tp)*currentSel.qty;
   const u=document.getElementById('modalUnitPrice');if(u)u.textContent=currentDrink.price+tp;
   const q=document.getElementById('modalQtyVal');if(q)q.textContent=currentSel.qty;
-  const b=document.getElementById('modalConfirmBtn');if(b)b.textContent='加入购物车 ¥'+total;
+  const b=document.getElementById('modalConfirmBtn');if(b)b.textContent='加入询价单 ¥'+total;
   updateChipSelections('chips-temp',currentSel.temperature);updateChipSelections('chips-sweet',currentSel.sweetness);updateChipSelections('chips-topping',currentSel.toppings);
 }
 function updateChipSelections(id,sel){
@@ -569,7 +569,7 @@ function changeQty(d){currentSel.qty=Math.max(1,Math.min(99,currentSel.qty+d));u
 // ══════════════════════════════════════════════
 function quickAdd(catId,itemId){
   const d=findDrink(catId,itemId);if(!d)return;
-  cart.push({id:Date.now(),drinkId:itemId,name:d.name,emoji:d.emoji,image_url:d.image_url,basePrice:d.price,temperature:optionsData.temperature[0]||'正常冰',sweetness:optionsData.sweetness[0]||'标准糖',toppings:[],qty:1});
+  cart.push({id:Date.now(),drinkId:itemId,name:d.name,emoji:d.emoji,image_url:d.image_url,basePrice:d.price,temperature:optionsData.temperature[0]||'中号',sweetness:optionsData.sweetness[0]||'白釉',toppings:[],qty:1});
   updateCartUI();pulseCart();
 }
 function addToCart(){
@@ -615,7 +615,7 @@ function renderCartDrawer(){
   b.innerHTML=cart.map((it,i)=>{
     const p=getItemPrice(it),opts=[it.temperature,it.sweetness,...it.toppings.map(t=>'+'+t)].join(' · ');
     return `<div class="cart-item">
-      <div class="cart-item-img">${it.image_url?`<img src="${it.image_url}" alt="">`:it.emoji||'🫖'}</div>
+      <div class="cart-item-img">${it.image_url?`<img src="${it.image_url}" alt="">`:it.emoji||'🏺'}</div>
       <div class="cart-item-info"><div class="cart-item-name">${it.name}</div><div class="cart-item-opts">${opts}</div><div class="cart-item-price">${p}</div></div>
       <div class="cart-item-qty"><button data-idx="${i}" data-d="-1">−</button><span>${it.qty}</span><button data-idx="${i}" data-d="1">+</button></div></div>`;
   }).join('');

@@ -95,32 +95,32 @@ def seed_menu():
         if db.execute("SELECT COUNT(*) FROM menu_categories").fetchone()[0] > 0:
             return
         db.executemany("INSERT INTO menu_categories VALUES (?,?,?)", [
-            ("recommend", "🔥 人气推荐", 1), ("fruit", "🍊 轻盈果茶", 2),
-            ("milktea", "🧋 醇香奶茶", 3), ("clear", "🥛 清乳茶", 4),
-            ("pure", "🍵 鲜萃茗茶", 5),
+            ("hot", "🔥 热销推荐", 1), ("tableware", "🍽️ 餐具系列", 2),
+            ("teaset", "🍵 茶具系列", 3), ("vase", "🏺 花瓶摆件", 4),
+            ("custom", "🎨 手工定制", 5),
         ])
         db.executemany(
             "INSERT INTO menu_items (id,category_id,name,description,price,image_url,badge,sort_order) VALUES (?,?,?,?,?,?,?,?)",
             [
-                ("r1","recommend","云岭茉莉白","茉莉绿茶底 · 鲜牛乳 · 清甜回甘",13,"","hot",1),
-                ("r2","recommend","布蕾脆脆奶芙","焦糖布蕾 · 脆脆珠 · 奶油顶",17,"","hot",2),
-                ("r3","recommend","超A芝士葡萄","巨峰葡萄 · 芝士奶盖 · 茉莉茶底",18,"","hot",3),
-                ("r4","recommend","杨枝甘露轻盈版","芒果 · 西柚 · 椰奶 · 0脂",16,"","new",4),
-                ("r5","recommend","黑桑莓莓","黑桑葚 · 草莓 · 茉莉绿茶",16,"","hot",5),
-                ("f1","fruit","满杯鲜柚","西柚片 · 茉莉绿茶 · 维C满满",15,"","",1),
-                ("f2","fruit","爆柠四季春","香水柠檬 · 四季春茶 · 手打爆汁",13,"","",2),
-                ("f3","fruit","桃气乌龙","蜜桃果肉 · 乌龙茶 · 桃香四溢",14,"","",3),
-                ("f4","fruit","西瓜椰椰","海南麒麟瓜 · 椰乳 · 清甜解暑",13,"","new",4),
-                ("m1","milktea","招牌奶茶","锡兰红茶 · 牛乳 · Q弹珍珠",12,"","hot",1),
-                ("m2","milktea","大红袍奶茶","武夷山大红袍 · 鲜牛乳 · 焦糖风味",15,"","",2),
-                ("m3","milktea","桂花酒酿奶茶","桂花酿 · 酒酿糯米 · 奶茶融合",14,"","",3),
-                ("m4","milktea","厚芋泥波波","手捣芋泥 · 黑糖波波 · 厚牛乳",16,"","",4),
-                ("c1","clear","茉莉奶绿","茉莉花茶 · 鲜牛乳 · 0植脂末",12,"","",1),
-                ("c2","clear","栀香清乳","栀子花茶 · 鲜牛乳 · 花香淡雅",13,"","new",2),
-                ("c3","clear","白桃清乳","白桃乌龙 · 脱脂牛乳 · 轻盈不腻",14,"","",3),
-                ("p1","pure","龙井鲜萃","西湖龙井 · 鲜叶冷萃 · 豆香清冽",18,"","",1),
-                ("p2","pure","茉莉飘雪","横县茉莉 · 飘雪工艺 · 七窨花香",14,"","new",2),
-                ("p3","pure","桂花乌龙","安溪铁观音 · 金秋桂花 · 岩骨花香",15,"","",3),
+                ("h1","hot","青花瓷碗套装","6只装·手工绘制·釉下彩·微波炉适用",68,"","hot",1),
+                ("h2","hot","手工拉坯茶壶","原矿陶泥·手工拉坯·容量300ml·柴烧工艺",120,"","hot",2),
+                ("h3","hot","景德镇白瓷花瓶","高白泥·1320°C高温烧制·高25cm",85,"","hot",3),
+                ("h4","hot","日式简约餐具套装","4碗4盘4筷架·釉下彩·洗碗机适用",158,"","new",4),
+                ("h5","hot","手绘陶瓷咖啡杯","350ml·手工绘制·每只独一无二",45,"","hot",5),
+                ("t1","tableware","陶瓷餐盘套装","4只装·直径22cm·釉下彩·可进微波炉",72,"","",1),
+                ("t2","tableware","釉下彩饭碗","单只·直径12cm·高温烧制·安全无毒",28,"","",2),
+                ("t3","tableware","陶瓷汤碗大号","直径20cm·双耳设计·可进烤箱",38,"","",3),
+                ("t4","tableware","日式拉面碗","直径18cm·复古釉面·经典和风",42,"","new",4),
+                ("s1","teaset","功夫茶具套装","一壶四杯一公道·宜兴紫砂·礼盒装",198,"","hot",1),
+                ("s2","teaset","汝窑茶杯套装","4只装·天青釉·开片可养·50ml",88,"","",2),
+                ("s3","teaset","紫砂茶宠摆件","手工雕刻·原矿紫砂·茶汤滋养变色",55,"","",3),
+                ("s4","teaset","旅行茶具便携装","一壶两杯·收纳包·户外功夫茶",128,"","new",4),
+                ("v1","vase","北欧风陶瓷花瓶","磨砂白·高30cm·简约百搭",65,"","",1),
+                ("v2","vase","手绘青花花瓶","景德镇手工·高35cm·收藏级",180,"","hot",2),
+                ("v3","vase","迷你多肉花盆","口径8cm·底部开孔·6色可选",22,"","new",3),
+                ("c1","custom","定制Logo陶瓷杯","350ml·丝印/激光雕刻·50只起定",36,"","",1),
+                ("c2","custom","企业礼品套装","定制礼盒·含杯+盘+茶叶罐·100套起",260,"","",2),
+                ("c3","custom","手工定制茶具","一对一设计·大师手作·收藏证书",350,"","hot",3),
             ]
         )
 
@@ -157,8 +157,8 @@ def admin_login(req: LoginReq):
 # ============================================
 class OrderItem(BaseModel):
     menu_item_id: str; item_name: str; base_price: float
-    quantity: int = 1; temperature: str = "正常冰"
-    sweetness: str = "标准糖"; toppings: list[str] = []
+    quantity: int = 1; temperature: str = "中号"
+    sweetness: str = "白釉"; toppings: list[str] = []
 
 class CreateOrder(BaseModel):
     items: list[OrderItem]
@@ -191,12 +191,12 @@ def get_menu():
 @app.get("/api/options")
 def get_options():
     return {
-        "temperature": ["正常冰","少冰","去冰","常温","温","热"],
-        "sweetness": ["标准糖","七分糖","五分糖","三分糖","无糖"],
+        "temperature": ["小号","中号","大号","特大号"],
+        "sweetness": ["白釉","青釉","天青釉","窑变釉","哑光黑釉"],
         "toppings": [
-            {"name":"珍珠","price":2},{"name":"椰果","price":2},
-            {"name":"布丁","price":3},{"name":"仙草","price":2},
-            {"name":"芋圆","price":3},{"name":"芝士奶盖","price":4}
+            {"name":"礼盒包装","price":10},{"name":"烫金Logo","price":15},
+            {"name":"定制贺卡","price":5},{"name":"防震包装","price":8},
+            {"name":"加急制作","price":20},{"name":"大师签名","price":50}
         ]
     }
 
@@ -207,7 +207,7 @@ def create_order(req: CreateOrder):
         raise HTTPException(400, "订单不能为空")
     oid = str(uuid.uuid4())[:8]
     ono = f"#{int(time.time()) % 100000:05d}"
-    tp = {"珍珠":2,"椰果":2,"布丁":3,"仙草":2,"芋圆":3,"芝士奶盖":4}
+    tp = {"礼盒包装":10,"烫金Logo":15,"定制贺卡":5,"防震包装":8,"加急制作":20,"大师签名":50}
     total = sum((it.base_price + sum(tp.get(t,0) for t in it.toppings)) * it.quantity for it in req.items)
 
     with get_db() as db:
@@ -275,7 +275,7 @@ def admin_list_items(_=Depends(check_admin)):
 def update_menu_item(item_id: str, update: MenuUpdate, _=Depends(check_admin)):
     with get_db() as db:
         if not db.execute("SELECT id FROM menu_items WHERE id=?",(item_id,)).fetchone():
-            raise HTTPException(404, "饮品不存在")
+            raise HTTPException(404, "产品不存在")
         fields = {}
         if update.name is not None: fields["name"] = update.name
         if update.description is not None: fields["description"] = update.description
@@ -294,7 +294,7 @@ def update_menu_item(item_id: str, update: MenuUpdate, _=Depends(check_admin)):
 def update_item_image(item_id: str, image_url: str = "", _=Depends(check_admin)):
     with get_db() as db:
         if not db.execute("SELECT id FROM menu_items WHERE id=?",(item_id,)).fetchone():
-            raise HTTPException(404, "饮品不存在")
+            raise HTTPException(404, "产品不存在")
         db.execute("UPDATE menu_items SET image_url=? WHERE id=?",(image_url,item_id))
     return {"ok": True}
 
