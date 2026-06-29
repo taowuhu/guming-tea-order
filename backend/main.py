@@ -325,6 +325,42 @@ def create_item(req: CreateItem, _=Depends(check_admin)):
     return {"ok": True, "id": req.id}
 
 
+
+
+class CategoryUpdate(BaseModel):
+    name: str
+
+@app.get("/api/admin/categories")
+def list_categories(_=Depends(check_admin)):
+    with get_db() as db:
+        cats = db.execute("SELECT id,name,sort_order FROM menu_categories ORDER BY sort_order").fetchall()
+    return {"categories": [{"id":c["id"],"name":c["name"],"sort_order":c["sort_order"]} for c in cats]}
+
+@app.put("/api/admin/categories/{cat_id}")
+def update_category(cat_id: str, req: CategoryUpdate, _=Depends(check_admin)):
+    with get_db() as db:
+        if not db.execute("SELECT id FROM menu_categories WHERE id=?",(cat_id,)).fetchone():
+            raise HTTPException(404, "分类不存在")
+        db.execute("UPDATE menu_categories SET name=? WHERE id=?",(req.name,cat_id))
+    return {"ok": True}
+
+@app.delete("/api/admin/categories/{cat_id}")
+def delete_category(cat_id: str, _=Depends(check_admin)):
+    with get_db() as db:
+        if not db.execute("SELECT id FROM menu_categories WHERE id=?",(cat_id,)).fetchone():
+            raise HTTPException(404, "分类不存在")
+        db.execute("DELETE FROM menu_items WHERE category_id=?",(cat_id,))
+        db.execute("DELETE FROM menu_categories WHERE id=?",(cat_id,))
+    return {"ok": True}
+
+@app.post("/api/admin/categories")
+def create_category(req: CategoryUpdate, _=Depends(check_admin)):
+    cat_id = "cat_" + uuid.uuid4().hex[:6]
+    with get_db() as db:
+        db.execute("INSERT INTO menu_categories (id,name,sort_order) VALUES (?,?,99)",(cat_id,req.name))
+    return {"ok": True, "id": cat_id}
+
+
 @app.get("/api/health")
 def health():
     return {"status":"ok","service":"墨禾陶瓷批发"}

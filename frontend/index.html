@@ -255,6 +255,19 @@ body{
 .admin-panel h2{font-size:18px;font-weight:700;margin:16px 0 12px;display:flex;align-items:center;gap:8px}
 .admin-panel h2 .btn-text{margin-left:auto}
 
+.cat-manage{
+  background:var(--bg-card);backdrop-filter:blur(12px);border-radius:var(--radius-md);
+  padding:12px 14px;margin-bottom:12px;
+}
+.cat-manage-title{font-size:14px;font-weight:600;margin-bottom:8px;display:flex;align-items:center}
+.cat-manage-title .btn-text{margin-left:auto}
+.cat-row{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.cat-name-input{
+  flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:8px;
+  font-size:14px;font-family:var(--font);
+}
+.cat-name-input:focus{outline:none;border-color:var(--accent)}
+
 .admin-item{
   background:var(--bg-card);backdrop-filter:blur(12px);border-radius:var(--radius-md);
   padding:14px;margin-bottom:10px;border:0.5px solid var(--border);
@@ -714,14 +727,22 @@ async function loadAdminPanel(){
   const el=document.getElementById('adminPanel');
   el.innerHTML='<div class="loading">加载中...</div>';
   try{
-    await fetchAdminItems();
+    await Promise.all([fetchAdminItems(),fetchAdminCats()]);
     renderAdminPanel();
   }catch(e){el.innerHTML=`<div class="loading">⚠️ ${e.message}</div>`}
+}
+
+async function fetchAdminCats(){
+  const d=await adminApi('/api/admin/categories');
+  adminCats=d.categories;
 }
 
 function renderAdminPanel(){
   const el=document.getElementById('adminPanel');
   el.innerHTML=`<h2>⚙️ 产品管理 <button class="btn-text" onclick="refreshMenu()">🔄 刷新</button> <button class="btn-text" onclick="showAddModal()" style="color:var(--accent-dark);font-weight:700">＋ 新增产品</button></h2>`+
+    `<div class="cat-manage"><div class="cat-manage-title">📂 分类管理 <button class="btn-text" onclick="showAddCat()" style="color:var(--accent-dark)">＋ 新增分类</button></div>`+
+    adminCats.map(c=>`<div class="cat-row"><input value="${escHtml(c.name)}" data-cat-id="${c.id}" class="cat-name-input"> <button class="btn-text" onclick="saveCat('${c.id}')">💾</button> <button class="btn-text" style="color:#e25c3b" onclick="deleteCat('${c.id}')">🗑</button></div>`).join('')+
+    `</div>`+
     adminItems.map(it=>`
     <div class="admin-item${it.is_available?'':' unavailable'}" id="admin-item-${it.id}">
       <div class="admin-item-row">
@@ -807,6 +828,38 @@ async function addNewItem(){
   try{
     await adminApi('/api/admin/menu-items',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,name,description:desc,price,category_id:cat})});
     closeAddModal();flashMsg('✅ 已添加');
+    await refreshMenu();
+  }catch(e){flashMsg('❌ '+e.message)}
+}
+
+// Category management
+function showAddCat(){
+  const name=prompt('输入新分类名称（如：🔥 新品上架）');
+  if(!name||!name.trim())return;
+  (async()=>{
+    try{
+      await adminApi('/api/admin/categories',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name.trim()})});
+      flashMsg('✅ 分类已添加');
+      await refreshMenu();
+    }catch(e){flashMsg('❌ '+e.message)}
+  })();
+}
+async function saveCat(catId){
+  const input=document.querySelector(`[data-cat-id="${catId}"]`);
+  if(!input)return;
+  const name=input.value.trim();
+  if(!name){flashMsg('分类名称不能为空');return}
+  try{
+    await adminApi(`/api/admin/categories/${catId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})});
+    flashMsg('✅ 分类已更新');
+  }catch(e){flashMsg('❌ '+e.message)}
+}
+async function deleteCat(catId){
+  const cat=adminCats.find(c=>c.id===catId);
+  if(!confirm(`删除分类「${cat?.name||catId}」及其所有产品？此操作不可撤销。`))return;
+  try{
+    await adminApi(`/api/admin/categories/${catId}`,{method:'DELETE'});
+    flashMsg('🗑 分类已删除');
     await refreshMenu();
   }catch(e){flashMsg('❌ '+e.message)}
 }
