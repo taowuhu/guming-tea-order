@@ -12,7 +12,7 @@ if not exist ".venv\Scripts\python.exe" (
 )
 
 :: 设置管理密码（上线前请修改）
-set ADMIN_PASSWORD=***
+set ADMIN_PASSWORD=guming2024
 
 echo 🚀 启动服务器 http://localhost:8000
 echo 🔐 管理密码: %ADMIN_PASSWORD%
