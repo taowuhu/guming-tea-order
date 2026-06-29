@@ -411,15 +411,6 @@ body{
   <div class="btns"><button class="cancel" onclick="closeAddModal()">取消</button><button class="confirm" onclick="addNewItem()">确认添加</button></div>
 </div></div>
 
-<!-- Checkout Form Overlay -->
-<div class="upload-overlay hidden" id="checkoutOverlay"><div class="upload-card">
-  <h3>📦 填写收货信息</h3>
-  <input id="coName" placeholder="收货人姓名 *" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;font-size:15px;margin-bottom:8px;font-family:var(--font)" required>
-  <input id="coPhone" placeholder="手机号码 *" type="tel" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;font-size:15px;margin-bottom:8px;font-family:var(--font)" required>
-  <textarea id="coAddr" placeholder="收货地址（选填）" rows="2" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;font-size:14px;margin-bottom:12px;font-family:var(--font);resize:vertical"></textarea>
-  <div class="btns"><button class="cancel" onclick="closeCheckout()">返回</button><button class="confirm" onclick="submitCheckout()">确认提交</button></div>
-</div></div>
-
 <script>
 // ══════════════════════════════════════════════
 //  STATE
@@ -663,34 +654,11 @@ function renderCartDrawer(){
 }
 
 async function checkout(){
-  if(!cart.length)return;
-  // Show customer info form first
-  showCheckoutForm();
-}
-function showToast(icon,title,desc,extra){
-  const t=document.createElement('div');t.className='order-toast';
-  t.innerHTML=`<div class="toast-card"><div class="toast-icon">${icon}</div><div class="toast-title">${title}</div><div class="toast-desc">${desc}</div><div style="font-size:12px;color:var(--text3)">${extra||''}</div><button class="btn-checkout toast-close" style="margin-top:16px">好的</button></div>`;
-  document.body.appendChild(t);document.body.style.overflow='hidden';
-  t.querySelector('.toast-close').addEventListener('click',()=>{t.remove();document.body.style.overflow=''});
-}
-
-function showCheckoutForm(){
-  closeCartDrawer();
-  document.getElementById('checkoutOverlay').classList.remove('hidden');
-}
-function closeCheckout(){document.getElementById('checkoutOverlay').classList.add('hidden')}
-
-async function submitCheckout(){
-  const name=document.getElementById('coName').value.trim();
-  const phone=document.getElementById('coPhone').value.trim();
-  const addr=document.getElementById('coAddr').value.trim();
-  if(!name||!phone){flashMsg('请填写姓名和电话');return}
-
-  const tot=cartTotal(),cnt=cartCount();
+  if(!cart.length)return;const tot=cartTotal(),cnt=cartCount();
   try{
     const items=cart.map(it=>({menu_item_id:it.drinkId,item_name:it.name,base_price:it.basePrice,quantity:it.qty,temperature:it.temperature,sweetness:it.sweetness,toppings:it.toppings}));
-    const order=await api('/api/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items,customer_name:name,customer_phone:phone,customer_address:addr})});
-    cart=[];updateCartUI();closeCheckout();
+    const order=await api('/api/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items})});
+    cart=[];updateCartUI();renderCartDrawer();closeCartDrawer();
     const pay=await api('/api/payment');
     const hasPay=pay.alipay||pay.wechat;
     showToast('✅','下单成功！',`${cnt}件商品 · ¥${tot}`,
@@ -701,6 +669,13 @@ async function submitCheckout(){
         pay.wechat?`<a href="${pay.wechat}" target="_blank" rel="noopener" style="display:inline-block;margin:4px 6px;padding:8px 20px;background:#07C160;color:#fff;border-radius:20px;text-decoration:none;font-weight:600">💚 微信付款</a>`:''
       }</div>`:''));
   }catch(e){alert('下单失败: '+e.message)}
+}
+
+function showToast(icon,title,desc,extra){
+  const t=document.createElement('div');t.className='order-toast';
+  t.innerHTML=`<div class="toast-card"><div class="toast-icon">${icon}</div><div class="toast-title">${title}</div><div class="toast-desc">${desc}</div><div style="font-size:12px;color:var(--text3)">${extra||''}</div><button class="btn-checkout toast-close" style="margin-top:16px">好的</button></div>`;
+  document.body.appendChild(t);document.body.style.overflow='hidden';
+  t.querySelector('.toast-close').addEventListener('click',()=>{t.remove();document.body.style.overflow=''});
 }
 
 // ══════════════════════════════════════════════
