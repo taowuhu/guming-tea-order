@@ -83,6 +83,12 @@ def init_db():
                 sweetness TEXT DEFAULT '标准糖',
                 toppings TEXT DEFAULT '[]'
             );
+            CREATE TABLE IF NOT EXISTS option_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                group_key TEXT NOT NULL,
+                name TEXT NOT NULL,
+                price REAL DEFAULT 0
+            );
         """)
         # Migration
         cols = [r[1] for r in db.execute("PRAGMA table_info(menu_items)").fetchall()]
@@ -188,17 +194,29 @@ def get_menu():
         } for c in cats]}
 
 
+def seed_options():
+    with get_db() as db:
+        if db.execute("SELECT COUNT(*) FROM option_items").fetchone()[0] > 0:
+            return
+        for n in ["小号","中号","大号","特大号"]:
+            db.execute("INSERT INTO option_items (group_key,name,price) VALUES ('temperature',?,0)",(n,))
+        for n in ["白釉","青釉","天青釉","窑变釉","哑光黑釉"]:
+            db.execute("INSERT INTO option_items (group_key,name,price) VALUES ('sweetness',?,0)",(n,))
+        for n,p in [("礼盒包装",10),("烫金Logo",15),("定制贺卡",5),("防震包装",8),("加急制作",20),("大师签名",50)]:
+            db.execute("INSERT INTO option_items (group_key,name,price) VALUES ('toppings',?,?)",(n,p))
+
+
 @app.get("/api/options")
 def get_options():
-    return {
-        "temperature": ["小号","中号","大号","特大号"],
-        "sweetness": ["白釉","青釉","天青釉","窑变釉","哑光黑釉"],
-        "toppings": [
-            {"name":"礼盒包装","price":10},{"name":"烫金Logo","price":15},
-            {"name":"定制贺卡","price":5},{"name":"防震包装","price":8},
-            {"name":"加急制作","price":20},{"name":"大师签名","price":50}
-        ]
-    }
+    with get_db() as db:
+        rows = db.execute("SELECT group_key,name,price FROM option_items ORDER BY id").fetchall()
+    result = {"temperature":[],"sweetness":[],"toppings":[]}
+    for r in rows:
+        if r["group_key"] == "toppings":
+            result["toppings"].append({"name":r["name"],"price":r["price"]})
+        else:
+            result[r["group_key"]].append(r["name"])
+    return result
 
 
 @app.post("/api/orders")
@@ -361,6 +379,36 @@ def create_category(req: CategoryUpdate, _=Depends(check_admin)):
     return {"ok": True, "id": cat_id}
 
 
+# Option management
+class OptionUpdate(BaseModel):
+    name: str
+    price: float = 0
+
+@app.get("/api/admin/options")
+def admin_get_options(_=Depends(check_admin)):
+    with get_db() as db:
+        rows = db.execute("SELECT id,group_key,name,price FROM option_items ORDER BY group_key,id").fetchall()
+    return {"options": [{"id":r["id"],"group_key":r["group_key"],"name":r["name"],"price":r["price"]} for r in rows]}
+
+@app.put("/api/admin/options/{opt_id}")
+def update_option(opt_id: int, req: OptionUpdate, _=Depends(check_admin)):
+    with get_db() as db:
+        db.execute("UPDATE option_items SET name=?,price=? WHERE id=?",(req.name,req.price,opt_id))
+    return {"ok": True}
+
+@app.delete("/api/admin/options/{opt_id}")
+def delete_option(opt_id: int, _=Depends(check_admin)):
+    with get_db() as db:
+        db.execute("DELETE FROM option_items WHERE id=?",(opt_id,))
+    return {"ok": True}
+
+@app.post("/api/admin/options")
+def create_option(req: OptionUpdate, group_key: str = "temperature", _=Depends(check_admin)):
+    with get_db() as db:
+        db.execute("INSERT INTO option_items (group_key,name,price) VALUES (?,?,?)",(group_key,req.name,req.price))
+    return {"ok": True}
+
+
 @app.get("/api/health")
 def health():
     return {"status":"ok","service":"墨禾陶瓷批发"}
@@ -391,6 +439,7 @@ async def serve_frontend(path: str):
 def startup():
     init_db()
     seed_menu()
+    seed_options()
     print(f"🏺 墨禾陶瓷批发 v2.1 已启动")
     print(f"   地址: http://0.0.0.0:{PORT}")
     print(f"   管理密码: {ADMIN_PASSWORD}")

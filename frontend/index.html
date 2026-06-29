@@ -727,7 +727,7 @@ async function loadAdminPanel(){
   const el=document.getElementById('adminPanel');
   el.innerHTML='<div class="loading">加载中...</div>';
   try{
-    await Promise.all([fetchAdminItems(),fetchAdminCats()]);
+    await Promise.all([fetchAdminItems(),fetchAdminCats(),fetchAdminOpts()]);
     renderAdminPanel();
   }catch(e){el.innerHTML=`<div class="loading">⚠️ ${e.message}</div>`}
 }
@@ -736,12 +736,26 @@ async function fetchAdminCats(){
   const d=await adminApi('/api/admin/categories');
   adminCats=d.categories;
 }
+let adminOpts=[];
+async function fetchAdminOpts(){
+  const d=await adminApi('/api/admin/options');
+  adminOpts=d.options;
+}
 
 function renderAdminPanel(){
   const el=document.getElementById('adminPanel');
   el.innerHTML=`<h2>⚙️ 产品管理 <button class="btn-text" onclick="refreshMenu()">🔄 刷新</button> <button class="btn-text" onclick="showAddModal()" style="color:var(--accent-dark);font-weight:700">＋ 新增产品</button></h2>`+
     `<div class="cat-manage"><div class="cat-manage-title">📂 分类管理 <button class="btn-text" onclick="showAddCat()" style="color:var(--accent-dark)">＋ 新增分类</button></div>`+
     adminCats.map(c=>`<div class="cat-row"><input value="${escHtml(c.name)}" data-cat-id="${c.id}" class="cat-name-input"> <button class="btn-text" onclick="saveCat('${c.id}')">💾</button> <button class="btn-text" style="color:#e25c3b" onclick="deleteCat('${c.id}')">🗑</button></div>`).join('')+
+    `</div>`+
+    `<div class="cat-manage"><div class="cat-manage-title">📋 选项管理（尺寸/釉色/工艺） <button class="btn-text" onclick="showAddOpt()" style="color:var(--accent-dark)">＋ 新增选项</button></div>`+
+    ['temperature','sweetness','toppings'].map(g=>{
+      const labels={temperature:'📏 尺寸',sweetness:'🎨 釉色',toppings:'🔧 工艺'};
+      const items=adminOpts.filter(o=>o.group_key===g);
+      return `<div style="margin-bottom:6px"><b>${labels[g]}</b>`+
+        items.map(o=>`<span style="display:inline-block;margin:2px 4px;font-size:12px;background:rgba(0,0,0,0.05);padding:2px 8px;border-radius:6px">${o.name}${o.price?' +¥'+o.price:''} <a href="#" onclick="editOpt(${o.id},'${escHtml(o.name)}',${o.price},'${g}');return false" style="color:var(--accent-dark)">✏️</a> <a href="#" onclick="delOpt(${o.id});return false" style="color:#e25c3b">×</a></span>`).join('')+
+        `</div>`;
+    }).join('')+
     `</div>`+
     adminItems.map(it=>`
     <div class="admin-item${it.is_available?'':' unavailable'}" id="admin-item-${it.id}">
@@ -891,6 +905,43 @@ async function doUpload(){
     const imgEl=document.querySelector(`#admin-item-${uploadTargetItemId} .admin-item-img`);
     if(imgEl)imgEl.innerHTML=`<img src="${data.url}" alt="">`;
     closeUpload();flashMsg('✅ 图片已更新');
+  }catch(e){flashMsg('❌ '+e.message)}
+}
+
+// Option management
+function showAddOpt(){
+  const g=prompt('选择选项类型:\n1 = 📏 尺寸 (temperature)\n2 = 🎨 釉色 (sweetness)\n3 = 🔧 工艺 (toppings)','1');
+  const keys={1:'temperature',2:'sweetness',3:'toppings'};
+  const gk=keys[parseInt(g)]||'temperature';
+  const name=prompt('选项名称（如：超大号）');if(!name||!name.trim())return;
+  let price=0;
+  if(gk==='toppings'){const p=prompt('价格（数字，如：15）','0');price=parseFloat(p)||0}
+  (async()=>{
+    try{
+      await adminApi(`/api/admin/options?group_key=${gk}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name.trim(),price})});
+      flashMsg('✅ 选项已添加');
+      await refreshMenu();
+    }catch(e){flashMsg('❌ '+e.message)}
+  })();
+}
+function editOpt(id,oldName,oldPrice,gk){
+  const name=prompt('修改名称',oldName);if(name===null)return;
+  let price=oldPrice;
+  if(gk==='toppings'){const p=prompt('价格',oldPrice);if(p===null)return;price=parseFloat(p)||0}
+  (async()=>{
+    try{
+      await adminApi(`/api/admin/options/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name.trim(),price})});
+      flashMsg('✅ 已更新');
+      await refreshMenu();
+    }catch(e){flashMsg('❌ '+e.message)}
+  })();
+}
+async function delOpt(id){
+  if(!confirm('删除这个选项？'))return;
+  try{
+    await adminApi(`/api/admin/options/${id}`,{method:'DELETE'});
+    flashMsg('🗑 已删除');
+    await refreshMenu();
   }catch(e){flashMsg('❌ '+e.message)}
 }
 
