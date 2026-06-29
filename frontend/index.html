@@ -383,6 +383,21 @@ body{
   <div class="btns"><button class="cancel" id="uploadCancel">取消</button><button class="confirm" id="uploadConfirm" disabled>确认上传</button></div>
 </div></div>
 
+<!-- Add Product Overlay -->
+<div class="upload-overlay hidden" id="addOverlay"><div class="upload-card">
+  <h3>＋ 新增产品</h3>
+  <input type="hidden" id="addItemId">
+  <input id="addItemName" placeholder="产品名称" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;font-size:15px;margin-bottom:8px;font-family:var(--font)">
+  <textarea id="addItemDesc" placeholder="产品描述" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;font-size:14px;margin-bottom:8px;font-family:var(--font);resize:vertical" rows="2"></textarea>
+  <div style="display:flex;gap:8px;margin-bottom:8px">
+    <input type="number" id="addItemPrice" placeholder="价格" step="0.5" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:10px;font-size:15px;font-family:var(--font)">
+    <select id="addItemCat" style="flex:1;padding:10px;border:1px solid #ddd;border-radius:10px;font-size:14px;font-family:var(--font)">
+      <option value="hot">🔥 热销推荐</option><option value="tableware">🍽️ 餐具系列</option><option value="teaset">🍵 茶具系列</option><option value="vase">🏺 花瓶摆件</option><option value="custom">🎨 手工定制</option>
+    </select>
+  </div>
+  <div class="btns"><button class="cancel" onclick="closeAddModal()">取消</button><button class="confirm" onclick="addNewItem()">确认添加</button></div>
+</div></div>
+
 <script>
 // ══════════════════════════════════════════════
 //  STATE
@@ -706,11 +721,11 @@ async function loadAdminPanel(){
 
 function renderAdminPanel(){
   const el=document.getElementById('adminPanel');
-  el.innerHTML=`<h2>⚙️ 菜单管理 <button class="btn-text" onclick="refreshMenu()">🔄 刷新</button></h2>`+
+  el.innerHTML=`<h2>⚙️ 产品管理 <button class="btn-text" onclick="refreshMenu()">🔄 刷新</button> <button class="btn-text" onclick="showAddModal()" style="color:var(--accent-dark);font-weight:700">＋ 新增产品</button></h2>`+
     adminItems.map(it=>`
     <div class="admin-item${it.is_available?'':' unavailable'}" id="admin-item-${it.id}">
       <div class="admin-item-row">
-        <div class="admin-item-img" onclick="openUpload('${it.id}')">${it.image_url?`<img src="${it.image_url}" alt="">`:(it.id==='r1'?'🌸':it.id==='r2'?'🍮':it.id==='r3'?'🍇':it.id==='r4'?'🥭':it.id==='r5'?'🍓':it.id==='f1'?'🍊':it.id==='f2'?'🍋':it.id==='f3'?'🍑':it.id==='f4'?'🍉':it.id==='m1'?'🫖':it.id==='m2'?'🍂':it.id==='m3'?'🌾':it.id==='m4'?'💜':it.id==='c1'?'🍵':it.id==='c2'?'🤍':it.id==='c3'?'🍑':it.id==='p1'?'🌿':it.id==='p2'?'❄️':'🌼')}</div>
+        <div class="admin-item-img" onclick="openUpload('${it.id}')">${it.image_url?`<img src="${it.image_url}" alt="">`:getEmoji(it.id)}</div>
         <div class="admin-item-body">
           <input value="${escHtml(it.name)}" data-field="name" data-id="${it.id}" placeholder="名称">
           <div class="row2">
@@ -726,6 +741,7 @@ function renderAdminPanel(){
         <button class="primary" onclick="saveItem('${it.id}')">💾 保存</button>
         <button onclick="openUpload('${it.id}')">📷 换图</button>
         <button class="${it.is_available?'danger':''}" onclick="toggleAvailability('${it.id}')">${it.is_available?'👁 下架':'👁‍🗨 上架'}</button>
+        <button class="danger" onclick="deleteItem('${it.id}')" style="background:#e25c3b">🗑 删除</button>
       </div>
     </div>`).join('');
 }
@@ -753,6 +769,45 @@ async function toggleAvailability(itemId){
     await adminApi(`/api/admin/menu-items/${itemId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({is_available:newVal})});
     orig.is_available=newVal;
     renderAdminPanel();flashMsg(newVal?'✅ 已上架':'👁 已下架');
+  }catch(e){flashMsg('❌ '+e.message)}
+}
+
+async function deleteItem(itemId){
+  if(!confirm('确定删除这个产品吗？此操作不可撤销。'))return;
+  try{
+    await adminApi(`/api/admin/menu-items/${itemId}`,{method:'DELETE'});
+    adminItems=adminItems.filter(x=>x.id!==itemId);
+    renderAdminPanel();flashMsg('🗑 已删除');
+  }catch(e){flashMsg('❌ '+e.message)}
+}
+
+function getEmoji(id){
+  const map={h1:'🍚',h2:'🫖',h3:'🏺',h4:'🍽️',h5:'☕',t1:'🍛',t2:'🥣',t3:'🍲',t4:'🍜',s1:'🫖',s2:'🍵',s3:'🐉',s4:'🎒',v1:'🏺',v2:'🌸',v3:'🌵',c1:'🖨️',c2:'🎁',c3:'👨‍🎨'};
+  return map[id]||'🏺';
+}
+
+function showAddModal(){
+  const id='new_'+Date.now().toString(36);
+  document.getElementById('addOverlay').classList.remove('hidden');
+  document.getElementById('addItemId').value=id;
+  document.getElementById('addItemName').value='';
+  document.getElementById('addItemDesc').value='';
+  document.getElementById('addItemPrice').value='';
+  document.getElementById('addItemCat').value='hot';
+}
+function closeAddModal(){document.getElementById('addOverlay').classList.add('hidden')}
+
+async function addNewItem(){
+  const id=document.getElementById('addItemId').value.trim();
+  const name=document.getElementById('addItemName').value.trim();
+  const desc=document.getElementById('addItemDesc').value.trim();
+  const price=parseFloat(document.getElementById('addItemPrice').value);
+  const cat=document.getElementById('addItemCat').value;
+  if(!id||!name||isNaN(price)){flashMsg('请填写ID、名称和有效价格');return}
+  try{
+    await adminApi('/api/admin/menu-items',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,name,description:desc,price,category_id:cat})});
+    closeAddModal();flashMsg('✅ 已添加');
+    await refreshMenu();
   }catch(e){flashMsg('❌ '+e.message)}
 }
 

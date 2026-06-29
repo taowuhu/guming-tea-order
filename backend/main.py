@@ -299,6 +299,32 @@ def update_item_image(item_id: str, image_url: str = "", _=Depends(check_admin))
     return {"ok": True}
 
 
+@app.delete("/api/admin/menu-items/{item_id}")
+def delete_item(item_id: str, _=Depends(check_admin)):
+    with get_db() as db:
+        if not db.execute("SELECT id FROM menu_items WHERE id=?",(item_id,)).fetchone():
+            raise HTTPException(404, "产品不存在")
+        db.execute("DELETE FROM menu_items WHERE id=?",(item_id,))
+    return {"ok": True}
+
+
+class CreateItem(BaseModel):
+    id: str; name: str; category_id: str = "hot"
+    description: str = ""; price: float = 0; badge: str = ""
+
+
+@app.post("/api/admin/menu-items")
+def create_item(req: CreateItem, _=Depends(check_admin)):
+    with get_db() as db:
+        if db.execute("SELECT id FROM menu_items WHERE id=?",(req.id,)).fetchone():
+            raise HTTPException(400, "产品ID已存在")
+        db.execute(
+            "INSERT INTO menu_items (id,category_id,name,description,price,image_url,badge,sort_order) VALUES (?,?,?,?,?,?,?,99)",
+            (req.id, req.category_id, req.name, req.description, req.price, "", req.badge)
+        )
+    return {"ok": True, "id": req.id}
+
+
 @app.get("/api/health")
 def health():
     return {"status":"ok","service":"墨禾陶瓷批发"}
