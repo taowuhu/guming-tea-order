@@ -659,7 +659,15 @@ async function checkout(){
     const items=cart.map(it=>({menu_item_id:it.drinkId,item_name:it.name,base_price:it.basePrice,quantity:it.qty,temperature:it.temperature,sweetness:it.sweetness,toppings:it.toppings}));
     const order=await api('/api/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items})});
     cart=[];updateCartUI();renderCartDrawer();closeCartDrawer();
-    showToast('✅','下单成功！',`${cnt}件商品 · ¥${tot}`,`下单号 <strong style="color:var(--accent-dark);font-size:16px">${order.order_no}</strong>`);
+    const pay=await api('/api/payment');
+    const hasPay=pay.alipay||pay.wechat;
+    showToast('✅','下单成功！',`${cnt}件商品 · ¥${tot}`,
+      `下单号 <strong style="color:var(--accent-dark);font-size:16px">${order.order_no}</strong>`+
+      (hasPay?`<div style="margin-top:12px">${
+        pay.alipay?`<a href="${pay.alipay}" target="_blank" rel="noopener" style="display:inline-block;margin:4px 6px;padding:8px 20px;background:#1677FF;color:#fff;border-radius:20px;text-decoration:none;font-weight:600">💙 支付宝付款</a>`:''
+      }${
+        pay.wechat?`<a href="${pay.wechat}" target="_blank" rel="noopener" style="display:inline-block;margin:4px 6px;padding:8px 20px;background:#07C160;color:#fff;border-radius:20px;text-decoration:none;font-weight:600">💚 微信付款</a>`:''
+      }</div>`:''));
   }catch(e){alert('下单失败: '+e.message)}
 }
 function showToast(icon,title,desc,extra){
@@ -729,6 +737,7 @@ async function loadAdminPanel(){
   try{
     await Promise.all([fetchAdminItems(),fetchAdminCats(),fetchAdminOpts()]);
     renderAdminPanel();
+    loadPayConfig();
   }catch(e){el.innerHTML=`<div class="loading">⚠️ ${e.message}</div>`}
 }
 
@@ -740,6 +749,26 @@ let adminOpts=[];
 async function fetchAdminOpts(){
   const d=await adminApi('/api/admin/options');
   adminOpts=d.options;
+}
+async function loadPayConfig(){
+  try{
+    const cfg=await adminApi('/api/admin/config');
+    setTimeout(()=>{
+      const a=document.getElementById('cfgAlipay');if(a)a.value=cfg.alipay_url||'';
+      const w=document.getElementById('cfgWechat');if(w)w.value=cfg.wechat_url||'';
+    },100);
+  }catch(e){}
+}
+function savePayCfg(){
+  const alipay=document.getElementById('cfgAlipay').value.trim();
+  const wechat=document.getElementById('cfgWechat').value.trim();
+  (async()=>{
+    try{
+      await adminApi('/api/admin/config',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'alipay_url',value:alipay})});
+      await adminApi('/api/admin/config',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'wechat_url',value:wechat})});
+      flashMsg('✅ 付款配置已保存');
+    }catch(e){flashMsg('❌ '+e.message)}
+  })();
 }
 
 function renderAdminPanel(){
@@ -756,6 +785,10 @@ function renderAdminPanel(){
         items.map(o=>`<span style="display:inline-block;margin:2px 4px;font-size:12px;background:rgba(0,0,0,0.05);padding:2px 8px;border-radius:6px">${o.name}${o.price?' +¥'+o.price:''} <a href="#" onclick="editOpt(${o.id},'${escHtml(o.name)}',${o.price},'${g}');return false" style="color:var(--accent-dark)">✏️</a> <a href="#" onclick="delOpt(${o.id});return false" style="color:#e25c3b">×</a></span>`).join('')+
         `</div>`;
     }).join('')+
+    `</div>`+
+    `<div class="cat-manage"><div class="cat-manage-title">💳 付款设置</div>`+
+    `<div class="cat-row"><span style="width:60px;font-size:13px">💙 支付宝</span><input id="cfgAlipay" placeholder="付款码链接或 URL" class="cat-name-input"> <button class="btn-text" onclick="savePayCfg()" style="color:var(--accent-dark)">💾</button></div>`+
+    `<div class="cat-row"><span style="width:60px;font-size:13px">💚 微信</span><input id="cfgWechat" placeholder="付款码链接或 URL" class="cat-name-input"> <button class="btn-text" onclick="savePayCfg()" style="color:var(--accent-dark)">💾</button></div>`+
     `</div>`+
     adminItems.map(it=>`
     <div class="admin-item${it.is_available?'':' unavailable'}" id="admin-item-${it.id}">

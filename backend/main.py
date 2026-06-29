@@ -89,6 +89,10 @@ def init_db():
                 name TEXT NOT NULL,
                 price REAL DEFAULT 0
             );
+            CREATE TABLE IF NOT EXISTS config (
+                key TEXT PRIMARY KEY,
+                value TEXT DEFAULT ''
+            );
         """)
         # Migration
         cols = [r[1] for r in db.execute("PRAGMA table_info(menu_items)").fetchall()]
@@ -406,6 +410,38 @@ def delete_option(opt_id: int, _=Depends(check_admin)):
 def create_option(req: OptionUpdate, group_key: str = "temperature", _=Depends(check_admin)):
     with get_db() as db:
         db.execute("INSERT INTO option_items (group_key,name,price) VALUES (?,?,?)",(group_key,req.name,req.price))
+    return {"ok": True}
+
+
+# Payment config
+def get_config(key, default=""):
+    with get_db() as db:
+        r = db.execute("SELECT value FROM config WHERE key=?",(key,)).fetchone()
+    return r["value"] if r else default
+
+@app.get("/api/payment")
+def get_payment():
+    return {
+        "alipay": get_config("alipay_url"),
+        "wechat": get_config("wechat_url")
+    }
+
+@app.get("/api/admin/config")
+def admin_get_config(_=Depends(check_admin)):
+    rows = {}
+    with get_db() as db:
+        for r in db.execute("SELECT key,value FROM config").fetchall():
+            rows[r["key"]] = r["value"]
+    return rows
+
+class ConfigUpdate(BaseModel):
+    key: str
+    value: str = ""
+
+@app.put("/api/admin/config")
+def admin_set_config(req: ConfigUpdate, _=Depends(check_admin)):
+    with get_db() as db:
+        db.execute("INSERT OR REPLACE INTO config (key,value) VALUES (?,?)",(req.key,req.value))
     return {"ok": True}
 
 
