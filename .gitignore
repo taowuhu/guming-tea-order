@@ -5,3 +5,6 @@ data.db
 backend/uploads/*
 !backend/uploads/.gitkeep
 .DS_Store
+fix2.py
+fix_backend.py
+_test.py

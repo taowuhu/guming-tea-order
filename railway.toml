@@ -1,0 +1,8 @@
+[build]
+builder = "docker"
+
+[deploy]
+startCommand = "python backend/main.py"
+
+[service]
+port = 8000
