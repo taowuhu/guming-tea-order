@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>古茗 · 后台管理</title>
+<style>
+:root {
+  --bg: #f5f0eb; --card: #fff; --text: #2c2416; --text2: #8b7e6a; --text3: #b8a99a;
+  --accent: #c4956a; --accent2: #a67c52; --danger: #d9534f; --border: rgba(44,36,22,0.08);
+  --radius: 14px; --shadow: 0 2px 12px rgba(44,36,22,0.06);
+  --font: 'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;min-height:100vh}
+.container{max-width:900px;margin:0 auto;padding:20px 16px 80px}
+
+/* Header */
+.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.toolbar h1{font-size:22px}
+.toolbar h1 span{color:var(--accent)}
+.toolbar .nav-links{display:flex;gap:8px}
+.toolbar .nav-links a{font-size:13px;color:var(--accent2);text-decoration:none;padding:6px 14px;border-radius:20px;background:rgba(196,149,106,0.1)}
+.toolbar .nav-links a:hover{background:rgba(196,149,106,0.2)}
+
+/* Category tabs */
+.cat-bar{display:flex;gap:6px;margin-bottom:20px;overflow-x:auto;padding-bottom:4px}
+.cat-bar button{
+  padding:8px 16px;border-radius:20px;font-size:13px;border:none;cursor:pointer;
+  background:rgba(255,255,255,0.6);color:var(--text2);white-space:nowrap;
+  transition:all 0.2s;
+}
+.cat-bar button.active{background:var(--text);color:#fff;font-weight:600}
+.cat-bar button.add-cat-btn{background:transparent;border:1px dashed var(--text3);color:var(--text3);font-size:18px;padding:8px 12px}
+
+/* Item cards */
+.items-grid{display:flex;flex-direction:column;gap:10px}
+.item-card{
+  display:flex;gap:14px;padding:14px;border-radius:var(--radius);
+  background:var(--card);box-shadow:var(--shadow);align-items:center;
+  border:0.5px solid var(--border);transition:all 0.15s;
+}
+.item-card:hover{box-shadow:0 4px 18px rgba(44,36,22,0.1)}
+.item-card.unavailable{opacity:0.5}
+
+.item-img{
+  width:80px;height:80px;border-radius:10px;flex-shrink:0;
+  object-fit:cover;background:linear-gradient(135deg,#f0ebe2,#e8dfd4);
+  display:flex;align-items:center;justify-content:center;
+  font-size:32px;overflow:hidden;cursor:pointer;position:relative;
+}
+.item-img:hover::after{
+  content:'📷 换图';position:absolute;inset:0;
+  background:rgba(0,0,0,0.45);color:#fff;font-size:12px;font-weight:600;
+  display:flex;align-items:center;justify-content:center;
+}
+
+.item-info{flex:1;min-width:0}
+.item-name-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.item-name{font-size:15px;font-weight:600}
+.item-emoji{font-size:18px}
+.item-badge{font-size:10px;padding:1px 6px;border-radius:6px;background:var(--accent);color:#fff;font-weight:600}
+.item-badge.new{background:#8b7e6a}
+.item-desc{font-size:12px;color:var(--text3);margin-bottom:6px}
+
+.item-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.price-input{
+  width:80px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;
+  font-size:15px;font-weight:700;color:var(--accent2);text-align:center;
+  font-family:var(--font);
+}
+.price-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(196,149,106,0.12)}
+.price-prefix{font-size:13px;color:var(--text2)}
+
+.item-actions{display:flex;gap:6px;flex-shrink:0}
+.btn{
+  padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;
+  border:none;cursor:pointer;transition:all 0.15s;font-family:var(--font);
+}
+.btn-save{background:var(--accent);color:#fff}
+.btn-save:hover{background:var(--accent2)}
+.btn-del{background:transparent;color:var(--danger);border:1px solid var(--danger)}
+.btn-del:hover{background:var(--danger);color:#fff}
+
+/* Modal */
+.modal-overlay{
+  position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.4);
+  display:flex;align-items:center;justify-content:center;animation:fadeIn 0.2s;
+}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{
+  width:90%;max-width:460px;max-height:85vh;overflow-y:auto;
+  background:#fff;border-radius:18px;padding:24px;box-shadow:0 16px 48px rgba(0,0,0,0.15);
+}
+.modal h3{font-size:18px;margin-bottom:20px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px}
+.form-group input,.form-group select,.form-group textarea{
+  width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;
+  font-size:14px;font-family:var(--font);transition:border-color 0.2s;
+}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{
+  outline:none;border-color:var(--accent);
+}
+.form-group textarea{resize:vertical;min-height:60px}
+.image-preview{
+  width:120px;height:120px;border-radius:10px;object-fit:cover;
+  background:linear-gradient(135deg,#f0ebe2,#e8dfd4);
+  display:flex;align-items:center;justify-content:center;font-size:40px;margin-top:6px;
+}
+.upload-zone{
+  border:2px dashed var(--border);border-radius:10px;padding:20px;
+  text-align:center;cursor:pointer;transition:all 0.2s;margin-top:6px;
+}
+.upload-zone:hover{border-color:var(--accent);background:rgba(196,149,106,0.05)}
+.upload-zone p{font-size:12px;color:var(--text3);margin-top:6px}
+.modal-actions{display:flex;gap:10px;margin-top:20px}
+.modal-actions button{flex:1;padding:12px;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;border:none}
+.modal-actions .btn-primary{background:var(--accent);color:#fff}
+.modal-actions .btn-secondary{background:rgba(44,36,22,0.06);color:var(--text2)}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:30px;left:50%;transform:translateX(-50%);z-index:300;
+  background:var(--text);color:#fff;padding:12px 24px;border-radius:25px;
+  font-size:14px;font-weight:600;animation:slideUp 0.3s ease;
+  box-shadow:0 8px 24px rgba(0,0,0,0.15);
+}
+@keyframes slideUp{from{transform:translateX(-50%) translateY(20px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
+
+.hidden{display:none!important}
+.empty-state{text-align:center;padding:48px 20px;color:var(--text3)}
+.empty-state .icon{font-size:48px;margin-bottom:12px}
+
+@media(max-width:600px){
+  .container{padding:12px 10px 60px}
+  .item-img{width:64px;height:64px;font-size:24px}
+  .item-card{padding:10px;gap:10px}
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="toolbar">
+    <h1>古茗<span>·</span>管理后台</h1>
+    <div class="nav-links">
+      <a href="/">📱 点单页</a>
+      <a href="/api/orders" target="_blank">📋 订单列表</a>
+    </div>
+  </div>
+
+  <!-- Category tabs -->
+  <div class="cat-bar" id="catBar"></div>
+
+  <!-- Items -->
+  <div class="items-grid" id="itemsGrid"><div class="empty-state"><div class="icon">☕</div><p>加载中...</p></div></div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal-overlay hidden" id="modalOverlay">
+  <div class="modal" id="modal">
+    <h3 id="modalTitle">添加饮品</h3>
+    <input type="hidden" id="editItemId">
+    <div class="form-group">
+      <label>饮品名称 *</label>
+      <input type="text" id="editName" placeholder="例如：云岭茉莉白">
+    </div>
+    <div class="form-group">
+      <label>所属分类 *</label>
+      <select id="editCategory"></select>
+    </div>
+    <div class="form-group">
+      <label>价格 (¥) *</label>
+      <input type="number" id="editPrice" placeholder="13" step="0.01" min="0">
+    </div>
+    <div class="form-group">
+      <label>描述</label>
+      <input type="text" id="editDesc" placeholder="例如：茉莉绿茶底 · 鲜牛乳">
+    </div>
+    <div class="form-group">
+      <label>Emoji</label>
+      <input type="text" id="editEmoji" placeholder="🌸" maxlength="4">
+    </div>
+    <div class="form-group">
+      <label>角标</label>
+      <select id="editBadge">
+        <option value="">无</option>
+        <option value="hot">热卖</option>
+        <option value="new">上新</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>图片</label>
+      <div id="imageUploadZone" class="upload-zone">
+        <div style="font-size:32px">📷</div>
+        <p>点击上传图片 (JPG/PNG/WebP)</p>
+        <input type="file" id="imageInput" accept="image/*" style="display:none">
+      </div>
+      <img id="imagePreview" class="image-preview hidden" src="" alt="">
+    </div>
+    <div class="form-group">
+      <label>上架状态</label>
+      <select id="editAvailable">
+        <option value="1">上架</option>
+        <option value="0">下架</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal()">取消</button>
+      <button class="btn-primary" id="modalSaveBtn" onclick="saveItem()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/api/admin';
+let categories = [];
+let currentCatId = 'all';
+let selectedFile = null;
+let editingImageUrl = '';
+
+// ── Init ──
+async function init() {
+  await loadCategories();
+  renderCatBar();
+  await loadItems();
+}
+
+async function loadCategories() {
+  const res = await fetch('/api/admin/categories');
+  categories = await res.json();
+}
+
+async function loadItems() {
+  const url = currentCatId === 'all' ? `${API}/items` : `${API}/items?category_id=${currentCatId}`;
+  const res = await fetch(url);
+  const items = await res.json();
+  renderItems(items);
+}
+
+// ── Render ──
+function renderCatBar() {
+  const bar = document.getElementById('catBar');
+  bar.innerHTML = `
+    <button class="${currentCatId==='all'?'active':''}" onclick="switchCat('all')">全部</button>
+    ${categories.map(c => `
+      <button class="${currentCatId===c.id?'active':''}" onclick="switchCat('${c.id}')">${c.name}</button>
+    `).join('')}
+    <button class="add-cat-btn" onclick="addCategory()" title="添加分类">+</button>
+  `;
+}
+
+function renderItems(items) {
+  const grid = document.getElementById('itemsGrid');
+  if (!items.length) {
+    grid.innerHTML = `<div class="empty-state"><div class="icon">☕</div><p>该分类暂无饮品</p><button class="btn btn-save" style="margin-top:12px" onclick="openAddModal()">+ 添加饮品</button></div>`;
+    return;
+  }
+  grid.innerHTML = items.map(item => `
+    <div class="item-card${!item.is_available?' unavailable':''}">
+      <div class="item-img" onclick="triggerImageUpload('${item.id}')" title="点击更换图片">
+        ${item.image_url
+          ? `<img src="${item.image_url}" style="width:100%;height:100%;object-fit:cover">`
+          : item.emoji || '🫖'}
+      </div>
+      <div class="item-info">
+        <div class="item-name-row">
+          <span class="item-emoji">${item.emoji||''}</span>
+          <span class="item-name">${item.name}</span>
+          ${item.badge ? `<span class="item-badge${item.badge==='new'?' new':''}">${item.badge==='hot'?'热卖':'上新'}</span>` : ''}
+        </div>
+        <div class="item-desc">${item.description||'无描述'}</div>
+        <div class="item-controls">
+          <span class="price-prefix">¥</span>
+          <input type="number" class="price-input" value="${item.price}"
+            onchange="updatePrice('${item.id}', this.value)" step="0.01" min="0">
+          <input type="file" accept="image/*"
+            onchange="handleImageFile(this, '${item.id}')" style="display:none" class="file-input-${item.id}">
+          <button class="btn btn-save" onclick="openEditModal('${item.id}')">✏️ 编辑</button>
+          <button class="btn btn-del" onclick="deleteItem('${item.id}')">🗑</button>
+        </div>
+      </div>
+    </div>
+  `).join('') + `
+    <button class="btn btn-save" style="align-self:flex-start;margin-top:4px" onclick="openAddModal()">+ 添加饮品</button>
+  `;
+}
+
+// ── Category ──
+function switchCat(catId) {
+  currentCatId = catId;
+  renderCatBar();
+  loadItems();
+}
+
+async function addCategory() {
+  const name = prompt('新分类名称（例如：🍰 甜品）：');
+  if (!name) return;
+  const form = new FormData();
+  form.append('name', name);
+  form.append('sort_order', categories.length + 1);
+  await fetch(`${API}/categories`, { method: 'POST', body: form });
+  toast('✅ 分类已添加');
+  await loadCategories();
+  renderCatBar();
+}
+
+// ── Image upload (inline from card) ──
+function triggerImageUpload(itemId) {
+  document.querySelector(`.file-input-${itemId}`).click();
+}
+
+async function handleImageFile(input, itemId) {
+  const file = input.files[0];
+  if (!file) return;
+  const form = new FormData();
+  form.append('image', file);
+  const res = await fetch(`${API}/items/${itemId}`, { method: 'PUT', body: form });
+  const data = await res.json();
+  if (data.ok) {
+    toast('📷 图片已更新');
+    loadItems();
+  }
+}
+
+// ── Price quick edit ──
+async function updatePrice(itemId, price) {
+  const form = new FormData();
+  form.append('price', parseFloat(price));
+  await fetch(`${API}/items/${itemId}`, { method: 'PUT', body: form });
+  toast('💰 价格已更新');
+}
+
+// ── Modal ──
+function openAddModal() {
+  document.getElementById('modalTitle').textContent = '添加饮品';
+  document.getElementById('editItemId').value = '';
+  document.getElementById('editName').value = '';
+  document.getElementById('editPrice').value = '';
+  document.getElementById('editDesc').value = '';
+  document.getElementById('editEmoji').value = '';
+  document.getElementById('editBadge').value = '';
+  document.getElementById('editAvailable').value = '1';
+  selectedFile = null;
+  editingImageUrl = '';
+  document.getElementById('imagePreview').classList.add('hidden');
+  document.getElementById('imageUploadZone').classList.remove('hidden');
+
+  const catSelect = document.getElementById('editCategory');
+  catSelect.innerHTML = categories.map(c =>
+    `<option value="${c.id}" ${c.id===currentCatId&&currentCatId!=='all'?'selected':''}>${c.name}</option>`
+  ).join('');
+
+  document.getElementById('modalOverlay').classList.remove('hidden');
+}
+
+function openEditModal(itemId) {
+  fetch(`${API}/items`).then(r=>r.json()).then(items => {
+    const item = items.find(i => i.id === itemId);
+    if (!item) return;
+
+    document.getElementById('modalTitle').textContent = '编辑饮品';
+    document.getElementById('editItemId').value = item.id;
+    document.getElementById('editName').value = item.name;
+    document.getElementById('editPrice').value = item.price;
+    document.getElementById('editDesc').value = item.description || '';
+    document.getElementById('editEmoji').value = item.emoji || '';
+    document.getElementById('editBadge').value = item.badge || '';
+    document.getElementById('editAvailable').value = item.is_available ? '1' : '0';
+    selectedFile = null;
+    editingImageUrl = item.image_url || '';
+
+    const catSelect = document.getElementById('editCategory');
+    catSelect.innerHTML = categories.map(c =>
+      `<option value="${c.id}" ${c.id===item.category_id?'selected':''}>${c.name}</option>`
+    ).join('');
+
+    const preview = document.getElementById('imagePreview');
+    if (item.image_url) {
+      preview.src = item.image_url;
+      preview.classList.remove('hidden');
+      document.getElementById('imageUploadZone').classList.add('hidden');
+    } else {
+      preview.classList.add('hidden');
+      document.getElementById('imageUploadZone').classList.remove('hidden');
+    }
+
+    document.getElementById('modalOverlay').classList.remove('hidden');
+  });
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.add('hidden');
+}
+
+async function saveItem() {
+  const itemId = document.getElementById('editItemId').value;
+  const form = new FormData();
+  form.append('name', document.getElementById('editName').value || '未命名');
+  form.append('price', parseFloat(document.getElementById('editPrice').value) || 0);
+  form.append('description', document.getElementById('editDesc').value);
+  form.append('emoji', document.getElementById('editEmoji').value);
+  form.append('badge', document.getElementById('editBadge').value);
+  form.append('is_available', document.getElementById('editAvailable').value === '1');
+
+  if (itemId) {
+    // Editing existing
+    form.append('category_id', document.getElementById('editCategory').value);
+    if (selectedFile) form.append('image', selectedFile);
+    await fetch(`${API}/items/${itemId}`, { method: 'PUT', body: form });
+    toast('✅ 已更新');
+  } else {
+    // Creating new
+    form.append('category_id', document.getElementById('editCategory').value);
+    if (selectedFile) form.append('image', selectedFile);
+    await fetch(`${API}/items`, { method: 'POST', body: form });
+    toast('✅ 饮品已添加');
+  }
+
+  closeModal();
+  loadItems();
+}
+
+async function deleteItem(itemId) {
+  if (!confirm('确定删除这个饮品吗？此操作不可恢复。')) return;
+  await fetch(`${API}/items/${itemId}`, { method: 'DELETE' });
+  toast('🗑 已删除');
+  loadItems();
+}
+
+// ── Image upload in modal ──
+document.addEventListener('DOMContentLoaded', () => {
+  const zone = document.getElementById('imageUploadZone');
+  const input = document.getElementById('imageInput');
+
+  zone.addEventListener('click', () => input.click());
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'var(--accent)'; });
+  zone.addEventListener('dragleave', () => { zone.style.borderColor = ''; });
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.style.borderColor = '';
+    if (e.dataTransfer.files[0]) handleModalImage(e.dataTransfer.files[0]);
+  });
+  input.addEventListener('change', () => {
+    if (input.files[0]) handleModalImage(input.files[0]);
+  });
+
+  // Close modal on overlay click
+  document.getElementById('modalOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+});
+
+function handleModalImage(file) {
+  selectedFile = file;
+  const preview = document.getElementById('imagePreview');
+  const reader = new FileReader();
+  reader.onload = e => {
+    preview.src = e.target.result;
+    preview.classList.remove('hidden');
+    document.getElementById('imageUploadZone').classList.add('hidden');
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── Toast ──
+function toast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity 0.3s'; }, 2000);
+  setTimeout(() => t.remove(), 2500);
+}
+
+init();
+</script>
+</body>
+</html>

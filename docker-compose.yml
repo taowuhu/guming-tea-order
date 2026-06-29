@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  guming:
+    build: .
+    container_name: guming-tea
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/backend   # 持久化数据库和上传图片
+    environment:
+      - ADMIN_PASSWORD=guming2024   # ⚠️ 生产环境请改为强密码
+      - PORT=8000
+    restart: unless-stopped

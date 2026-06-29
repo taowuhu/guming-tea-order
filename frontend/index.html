@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>古茗 · 点单</title>
+<style>
+:root {
+  --bg: #f5f0eb; --bg-card: rgba(255,255,255,0.72);
+  --text: #2c2416; --text2: #8b7e6a; --text3: #b8a99a;
+  --accent: #c4956a; --accent-light: #dbb896; --accent-dark: #a67c52;
+  --accent-soft: rgba(196,149,106,0.12);
+  --border: rgba(44,36,22,0.08);
+  --shadow: 0 1px 3px rgba(44,36,22,0.04);
+  --radius-sm: 10px; --radius-md: 16px; --radius-lg: 22px; --radius-xl: 28px;
+  --safe-bottom: env(safe-area-inset-bottom, 20px);
+  --header-h: 56px;
+  --font: 'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:var(--font);background:#e8e3dc;color:var(--text);
+  display:flex;justify-content:center;align-items:flex-start;
+  min-height:100vh;min-height:100dvh;-webkit-font-smoothing:antialiased;
+}
+.app{
+  width:100%;max-width:420px;min-height:100vh;min-height:100dvh;
+  background:var(--bg);position:relative;overflow-x:hidden;
+  box-shadow:0 12px 40px rgba(44,36,22,0.10);
+}
+.header{
+  position:sticky;top:0;z-index:100;height:var(--header-h);padding:0 16px;
+  display:flex;align-items:center;justify-content:space-between;
+  backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);
+  background:rgba(245,240,235,0.78);border-bottom:0.5px solid var(--border);
+}
+.header-brand{font-size:18px;font-weight:700;letter-spacing:-0.3px;cursor:pointer;user-select:none}
+.header-brand span{color:var(--accent)}
+.header-right{display:flex;align-items:center;gap:8px}
+.header-loc{font-size:13px;color:var(--text2);padding:5px 12px;border-radius:20px;background:rgba(255,255,255,0.5)}
+.header-admin{
+  width:32px;height:32px;border-radius:50%;border:none;background:rgba(255,255,255,0.6);
+  font-size:16px;cursor:pointer;display:none;align-items:center;justify-content:center;
+  transition:all 0.2s;
+}
+.header-admin.active{background:var(--accent);color:#fff}
+.header-admin.show{display:flex}
+
+.cat-tabs-wrap{
+  position:sticky;top:var(--header-h);z-index:99;
+  backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);
+  background:rgba(245,240,235,0.74);
+}
+.cat-tabs{display:flex;gap:4px;padding:8px 12px;overflow-x:auto;scrollbar-width:none}
+.cat-tabs::-webkit-scrollbar{display:none}
+.cat-tab{
+  flex-shrink:0;padding:8px 16px;border-radius:20px;font-size:13.5px;font-weight:500;
+  color:var(--text2);background:transparent;border:none;cursor:pointer;
+  transition:all 0.25s ease;white-space:nowrap;
+}
+.cat-tab.active{background:var(--text);color:#faf8f4;font-weight:600;box-shadow:0 2px 8px rgba(44,36,22,0.15)}
+
+/* ── Menu ── */
+.menu-scroll{padding:0 14px 120px}
+.menu-section{margin-top:20px}
+.menu-section:first-child{margin-top:12px}
+.section-title{font-size:15px;font-weight:600;margin-bottom:12px}
+.section-count{font-size:12px;color:var(--text3);margin-left:4px;font-weight:400}
+
+.drink-card{
+  display:flex;gap:12px;padding:12px;margin-bottom:10px;border-radius:var(--radius-md);
+  background:var(--bg-card);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border:0.5px solid var(--border);box-shadow:var(--shadow);
+  cursor:pointer;transition:all 0.2s ease;position:relative;overflow:hidden;
+}
+.drink-card:active{transform:scale(0.985)}
+.drink-card .badge{
+  position:absolute;top:6px;right:6px;font-size:10px;font-weight:600;padding:2px 7px;border-radius:8px;z-index:2;
+}
+.drink-card .badge.hot{color:#fff;background:#d4936a}
+.drink-card .badge.new{color:var(--accent-dark);background:var(--accent-soft)}
+.drink-card .badge.soldout{color:#999;background:rgba(0,0,0,0.06)}
+
+.drink-img{
+  width:88px;height:88px;border-radius:var(--radius-sm);flex-shrink:0;
+  background:linear-gradient(135deg,#f0ebe2,#e8dfd4);
+  display:flex;align-items:center;justify-content:center;font-size:36px;
+  overflow:hidden;position:relative;
+}
+.drink-img img{width:100%;height:100%;object-fit:cover}
+.drink-info{flex:1;display:flex;flex-direction:column;justify-content:space-between;min-width:0}
+.drink-name{font-size:15px;font-weight:600}
+.drink-desc{font-size:12px;color:var(--text3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.drink-bottom{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+.drink-price{font-size:17px;font-weight:700;color:var(--accent-dark)}
+.drink-price::before{content:'¥';font-size:12px;font-weight:600}
+.drink-add{
+  width:28px;height:28px;border-radius:50%;background:var(--accent);
+  border:none;color:#fff;font-size:18px;line-height:1;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.2s ease;flex-shrink:0;box-shadow:0 2px 8px rgba(196,149,106,0.3);
+}
+.drink-add:active{transform:scale(0.9);background:var(--accent-dark)}
+
+/* ── Modal ── */
+.modal-overlay{
+  position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.35);
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  display:flex;align-items:flex-end;justify-content:center;animation:fadeIn 0.25s ease;
+}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-sheet{
+  width:100%;max-width:420px;max-height:88vh;background:#fafaf8;
+  border-radius:var(--radius-xl) var(--radius-xl) 0 0;
+  animation:slideUp 0.3s ease;display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:0 -8px 40px rgba(0,0,0,0.12);
+}
+.modal-handle{width:36px;height:4px;background:#d4cfc8;border-radius:2px;margin:10px auto 0}
+.modal-body{overflow-y:auto;padding:0 20px 24px;flex:1}
+.modal-img-wrap{
+  width:100%;height:200px;border-radius:var(--radius-md);margin:12px 0 16px;
+  background:linear-gradient(135deg,#f0ebe2,#e8dfd4);
+  display:flex;align-items:center;justify-content:center;font-size:64px;overflow:hidden;
+}
+.modal-img-wrap img{width:100%;height:100%;object-fit:cover}
+.modal-name{font-size:22px;font-weight:700}
+.modal-price-big{font-size:20px;font-weight:700;color:var(--accent-dark);margin-top:4px}
+.modal-price-big::before{content:'¥';font-size:14px}
+
+.option-group{margin-top:20px}
+.option-label{font-size:14px;font-weight:600;margin-bottom:10px}
+.option-chips{display:flex;flex-wrap:wrap;gap:8px}
+.option-chip{
+  padding:8px 16px;border-radius:20px;font-size:13px;font-weight:500;
+  color:var(--text2);background:rgba(44,36,22,0.04);border:0.5px solid transparent;
+  cursor:pointer;transition:all 0.2s;
+}
+.option-chip.selected{color:var(--accent-dark);background:var(--accent-soft);border-color:var(--accent-light);font-weight:600}
+.option-chip .price-tag{font-size:11px;color:var(--accent);margin-left:2px}
+
+.modal-footer{
+  padding:14px 20px calc(14px + var(--safe-bottom));border-top:0.5px solid var(--border);
+  display:flex;align-items:center;gap:12px;
+  background:rgba(255,255,255,0.7);backdrop-filter:blur(12px);
+}
+.modal-qty{display:flex;align-items:center;gap:14px}
+.modal-qty button{
+  width:32px;height:32px;border-radius:50%;border:0.5px solid var(--border);
+  background:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+}
+.modal-qty button:active{background:#f0ebe2}
+.modal-qty span{font-size:16px;font-weight:600;min-width:20px;text-align:center}
+.modal-confirm{
+  flex:1;padding:13px;background:var(--accent);border:none;color:#fff;
+  font-size:15px;font-weight:600;border-radius:25px;cursor:pointer;letter-spacing:0.5px;
+  box-shadow:0 4px 14px rgba(196,149,106,0.3);transition:all 0.2s;
+}
+.modal-confirm:active{background:var(--accent-dark);transform:scale(0.97)}
+
+/* ── Cart ── */
+.cart-bar{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:420px;z-index:150;padding:10px 14px calc(10px + var(--safe-bottom));
+  background:rgba(250,248,245,0.82);backdrop-filter:blur(24px) saturate(1.6);
+  border-top:0.5px solid var(--border);display:flex;align-items:center;gap:12px;
+  box-shadow:0 -2px 20px rgba(44,36,22,0.05);
+}
+.cart-icon-wrap{position:relative;width:48px;height:48px;flex-shrink:0;cursor:pointer}
+.cart-icon{
+  width:48px;height:48px;border-radius:50%;background:var(--accent);border:none;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 14px rgba(196,149,106,0.35);transition:transform 0.2s;
+}
+.cart-icon svg{width:24px;height:24px;fill:#fff}
+.cart-badge{
+  position:absolute;top:-3px;right:-3px;min-width:18px;height:18px;border-radius:9px;
+  background:#e25c3b;color:#fff;font-size:11px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;padding:0 5px;
+  box-shadow:0 2px 6px rgba(226,92,59,0.4);
+}
+.cart-info{flex:1;min-width:0}
+.cart-total{font-size:18px;font-weight:700}
+.cart-total::before{content:'¥';font-size:13px}
+.cart-hint{font-size:11px;color:var(--text3);margin-top:1px}
+.btn-checkout{
+  padding:12px 24px;border-radius:24px;background:var(--accent);border:none;color:#fff;
+  font-size:15px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;
+  box-shadow:0 4px 14px rgba(196,149,106,0.3);transition:all 0.2s;
+}
+.btn-checkout:disabled{background:#d4cfc8;cursor:not-allowed;box-shadow:none;color:#b8a99a}
+.btn-checkout:not(:disabled):active{background:var(--accent-dark);transform:scale(0.97)}
+
+/* Cart Drawer */
+.cart-drawer{
+  position:fixed;inset:0;z-index:210;background:rgba(0,0,0,0.35);
+  backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;
+  animation:fadeIn 0.2s ease;
+}
+.cart-drawer-sheet{
+  width:100%;max-width:420px;max-height:70vh;background:#fafaf8;
+  border-radius:var(--radius-xl) var(--radius-xl) 0 0;
+  animation:slideUp 0.3s ease;display:flex;flex-direction:column;
+}
+.cart-drawer-header{padding:16px 20px 12px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.cart-drawer-title{font-size:16px;font-weight:700}
+.btn-text{font-size:13px;color:var(--accent-dark);background:none;border:none;cursor:pointer;font-weight:500}
+.cart-drawer-body{overflow-y:auto;flex:1;padding:8px 20px}
+.cart-item{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:0.5px solid var(--border)}
+.cart-item-img{
+  width:52px;height:52px;border-radius:var(--radius-sm);flex-shrink:0;
+  background:linear-gradient(135deg,#f0ebe2,#e8dfd4);
+  display:flex;align-items:center;justify-content:center;font-size:22px;overflow:hidden;
+}
+.cart-item-img img{width:100%;height:100%;object-fit:cover}
+.cart-item-info{flex:1;min-width:0}
+.cart-item-name{font-size:14px;font-weight:600}
+.cart-item-opts{font-size:11px;color:var(--text3);margin-top:2px}
+.cart-item-price{font-size:14px;font-weight:700;color:var(--accent-dark);margin-top:4px}
+.cart-item-price::before{content:'¥';font-size:10px}
+.cart-item-qty{display:flex;align-items:center;gap:8px}
+.cart-item-qty button{
+  width:24px;height:24px;border-radius:50%;border:0.5px solid var(--border);
+  background:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+}
+.cart-drawer-empty{text-align:center;padding:48px 20px;color:var(--text3)}
+.cart-drawer-footer{
+  padding:12px 20px calc(12px + var(--safe-bottom));border-top:0.5px solid var(--border);
+  display:flex;align-items:center;gap:12px;
+}
+
+/* ── Toast ── */
+.order-toast{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:300;
+  text-align:center;animation:toastIn 0.4s ease;
+}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,-50%) scale(0.8)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+.toast-card{
+  background:rgba(255,255,255,0.92);backdrop-filter:blur(20px);
+  border-radius:var(--radius-lg);padding:36px 32px;
+  box-shadow:0 12px 40px rgba(44,36,22,0.10);
+}
+.toast-icon{width:64px;height:64px;border-radius:50%;background:#e8f5e9;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:32px}
+.toast-title{font-size:20px;font-weight:700;margin-bottom:6px}
+.toast-desc{font-size:14px;color:var(--text2);margin-bottom:8px}
+
+/* ══════════════════════════════════════════════════════
+   ADMIN PANEL
+   ══════════════════════════════════════════════════════ */
+.admin-panel{
+  padding:0 14px 120px;display:none;
+}
+.admin-panel.show{display:block}
+.admin-panel h2{font-size:18px;font-weight:700;margin:16px 0 12px;display:flex;align-items:center;gap:8px}
+.admin-panel h2 .btn-text{margin-left:auto}
+
+.admin-item{
+  background:var(--bg-card);backdrop-filter:blur(12px);border-radius:var(--radius-md);
+  padding:14px;margin-bottom:10px;border:0.5px solid var(--border);
+}
+.admin-item.unavailable{opacity:0.5}
+.admin-item-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.admin-item-img{
+  width:56px;height:56px;border-radius:10px;flex-shrink:0;
+  background:linear-gradient(135deg,#f0ebe2,#e8dfd4);
+  display:flex;align-items:center;justify-content:center;font-size:22px;overflow:hidden;
+  cursor:pointer;position:relative;
+}
+.admin-item-img img{width:100%;height:100%;object-fit:cover}
+.admin-item-img:hover::after{
+  content:'📷';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,0.4);border-radius:10px;font-size:20px;
+}
+.admin-item-body{flex:1;min-width:0}
+.admin-item-body input,.admin-item-body select{
+  width:100%;padding:6px 8px;border:0.5px solid var(--border);border-radius:8px;
+  font-size:13px;font-family:var(--font);background:#fff;margin-bottom:4px;
+}
+.admin-item-body input:focus,.admin-item-body select:focus{outline:none;border-color:var(--accent)}
+.admin-item-body .row2{display:flex;gap:6px}
+.admin-item-body .row2 input{flex:1;margin-bottom:0}
+.admin-item-body .row2 select{width:70px;margin-bottom:0}
+.admin-actions{display:flex;gap:6px;margin-top:6px}
+.admin-actions button{
+  padding:4px 12px;border-radius:14px;font-size:12px;font-weight:500;
+  border:0.5px solid var(--border);cursor:pointer;background:#fff;transition:all 0.15s;
+}
+.admin-actions button:active{background:#f0ebe2}
+.admin-actions button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.admin-actions button.danger{color:#e25c3b;border-color:rgba(226,92,59,0.3)}
+
+/* Upload overlay */
+.upload-overlay{
+  position:fixed;inset:0;z-index:400;background:rgba(0,0,0,0.5);
+  display:flex;align-items:center;justify-content:center;animation:fadeIn 0.2s;
+}
+.upload-card{
+  background:#fff;border-radius:var(--radius-lg);padding:24px;width:280px;text-align:center;
+}
+.upload-card h3{font-size:16px;margin-bottom:16px}
+.upload-card input[type=file]{margin-bottom:12px}
+.upload-card .preview{width:120px;height:120px;border-radius:12px;margin:0 auto 12px;background:#f0ebe2;overflow:hidden}
+.upload-card .preview img{width:100%;height:100%;object-fit:cover}
+.upload-card .btns{display:flex;gap:8px;justify-content:center}
+.upload-card .btns button{
+  padding:8px 20px;border-radius:20px;font-size:14px;border:none;cursor:pointer;font-weight:600;
+}
+.upload-card .btns .cancel{background:#f0ebe2;color:var(--text2)}
+.upload-card .btns .confirm{background:var(--accent);color:#fff}
+.upload-card .btns .confirm:disabled{opacity:0.5;cursor:not-allowed}
+
+/* Utility */
+.hidden{display:none!important}
+.loading{text-align:center;padding:60px 20px;color:var(--text3);font-size:14px}
+.toast-msg{
+  position:fixed;bottom:100px;left:50%;transform:translateX(-50%);z-index:350;
+  background:var(--text);color:#fff;padding:8px 20px;border-radius:20px;
+  font-size:14px;animation:fadeIn 0.3s;white-space:nowrap;
+}
+
+@media(max-width:360px){
+  .drink-img{width:74px;height:74px}
+  .drink-name{font-size:14px}
+  .modal-img-wrap{height:160px}
+}
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <header class="header">
+    <div class="header-brand" id="brandClick">古茗<span>·</span>点单</div>
+    <div class="header-right">
+      <div class="header-loc">📍 西湖文化广场店</div>
+      <button class="header-admin" id="adminToggle" title="管理">⚙️</button>
+    </div>
+  </header>
+  <div class="cat-tabs-wrap"><div class="cat-tabs" id="catTabs"></div></div>
+  <div class="menu-scroll" id="menuScroll"><div class="loading">🫖 加载菜单中...</div></div>
+  <div class="admin-panel" id="adminPanel"><div class="loading">加载管理面板...</div></div>
+
+  <div class="cart-bar" id="cartBar">
+    <div class="cart-icon-wrap" id="cartIconWrap">
+      <div class="cart-icon">
+        <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM7.2 14.8V14h10.58l2.72-5.44L18.21 8H6.2l-.97-4H1v2h2.6l3.51 12h14.3v-2H7.2z"/></svg>
+      </div>
+      <div class="cart-badge hidden" id="cartBadge">0</div>
+    </div>
+    <div class="cart-info">
+      <div class="cart-total" id="cartTotal">0</div>
+      <div class="cart-hint" id="cartHint">选购中...</div>
+    </div>
+    <button class="btn-checkout" id="cartCheckout" disabled>去结算</button>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay hidden" id="modalOverlay"><div class="modal-sheet" id="modalSheet">
+  <div class="modal-handle"></div><div class="modal-body" id="modalBody"></div><div class="modal-footer" id="modalFooter"></div>
+</div></div>
+
+<!-- Cart Drawer -->
+<div class="cart-drawer hidden" id="cartDrawer"><div class="cart-drawer-sheet" id="cartDrawerSheet">
+  <div class="cart-drawer-header"><div class="cart-drawer-title">🛒 购物车</div><button class="btn-text" id="cartClearBtn">清空</button></div>
+  <div class="cart-drawer-body" id="cartDrawerBody"></div>
+  <div class="cart-drawer-footer"><span class="cart-total" id="cartDrawerTotal">0</span><button class="btn-checkout" id="cartDrawerCheckout" disabled>去结算</button></div>
+</div></div>
+
+<!-- Admin Login Overlay -->
+<div class="upload-overlay hidden" id="loginOverlay"><div class="upload-card">
+  <h3>🔐 管理后台登录</h3>
+  <input type="password" id="loginPassword" placeholder="请输入管理密码" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;font-size:15px;margin-bottom:12px;text-align:center;font-family:var(--font)">
+  <div id="loginError" style="color:#e25c3b;font-size:13px;margin-bottom:8px;display:none"></div>
+  <div class="btns"><button class="cancel" id="loginCancel">取消</button><button class="confirm" id="loginConfirm">登录</button></div>
+</div></div>
+
+<!-- Image Upload Overlay -->
+<div class="upload-overlay hidden" id="uploadOverlay"><div class="upload-card">
+  <h3>上传图片</h3>
+  <div class="preview" id="uploadPreview"></div>
+  <input type="file" id="uploadFileInput" accept="image/*">
+  <div class="btns"><button class="cancel" id="uploadCancel">取消</button><button class="confirm" id="uploadConfirm" disabled>确认上传</button></div>
+</div></div>
+
+<script>
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+let menuData=[], optionsData={temperature:[],sweetness:[],toppings:[]}, cart=[], currentDrink=null;
+let currentSel={temperature:'正常冰',sweetness:'标准糖',toppings:[],qty:1};
+let isAdmin=false, adminItems=[], adminCats=[];
+let uploadTargetItemId=null, uploadFile=null;
+let adminToken=localStorage.getItem('guming_admin_token')||'';
+const API='';
+
+// ══════════════════════════════════════════════
+//  API
+// ══════════════════════════════════════════════
+async function api(path,opts={}){
+  if(adminToken && opts.method && opts.method!=='GET'){
+    opts.headers=opts.headers||{};
+    opts.headers['Authorization']='Bearer '+adminToken;
+  }
+  const r=await fetch(API+path,opts);
+  if(r.status===401){adminToken='';localStorage.removeItem('guming_admin_token');isAdmin=false;toggleAdmin();throw new Error('登录已过期')}
+  if(!r.ok)throw new Error((await r.json()).detail||'请求失败');
+  return r.json();
+}
+
+async function adminApi(path,opts={}){
+  opts.headers=opts.headers||{};
+  opts.headers['Authorization']='Bearer '+adminToken;
+  const r=await fetch(API+path,opts);
+  if(r.status===401){adminToken='';localStorage.removeItem('guming_admin_token');isAdmin=false;toggleAdmin();throw new Error('登录已过期，请重新登录')}
+  if(!r.ok)throw new Error((await r.json()).detail||'请求失败');
+  return r.json();
+}
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+async function init(){
+  try{
+    await Promise.all([fetchMenu(),fetchOptions()]);
+    renderAll();setupCatObserver();setupModalListeners();setupCartListeners();setupAdminListeners();
+  }catch(e){
+    document.getElementById('menuScroll').innerHTML=`<div class="loading">⚠️ ${e.message}<br><small>请确认后端已启动</small></div>`;
+  }
+}
+
+async function fetchMenu(){
+  const d=await api('/api/menu');
+  menuData=d.categories;
+}
+async function fetchOptions(){
+  optionsData=await api('/api/options');
+  currentSel.temperature=optionsData.temperature[0]||'正常冰';
+  currentSel.sweetness=optionsData.sweetness[0]||'标准糖';
+}
+async function fetchAdminItems(){
+  const d=await adminApi('/api/admin/menu-items');
+  adminItems=d.items;adminCats=d.categories;
+}
+
+// ══════════════════════════════════════════════
+//  RENDER MENU
+// ══════════════════════════════════════════════
+function renderAll(){renderTabs();renderMenu();updateCartUI();}
+
+function renderTabs(){
+  const el=document.getElementById('catTabs');
+  el.innerHTML=menuData.map((c,i)=>`<button class="cat-tab${i===0?' active':''}" data-cat="${c.id}">${c.name}</button>`).join('');
+  el.querySelectorAll('.cat-tab').forEach(b=>b.addEventListener('click',()=>scrollToCat(b.dataset.cat,b)));
+}
+
+function renderMenu(){
+  const el=document.getElementById('menuScroll');
+  el.innerHTML=menuData.map(cat=>`
+    <div class="menu-section" id="cat-${cat.id}">
+      <div class="section-title">${cat.name}<span class="section-count">${cat.items.length}款</span></div>
+      ${cat.items.map(it=>`
+        <div class="drink-card" data-cat="${cat.id}" data-item="${it.id}">
+          ${it.badge?`<span class="badge ${it.badge}">${it.badge==='hot'?'热卖':it.badge==='new'?'上新':it.badge}</span>`:''}
+          <div class="drink-img">${imgOrEmoji(it.image_url,it.id)}</div>
+          <div class="drink-info">
+            <div class="drink-name">${it.name}</div>
+            <div class="drink-desc">${it.desc}</div>
+            <div class="drink-bottom"><div class="drink-price">${it.price}</div><button class="drink-add" data-cat="${cat.id}" data-item="${it.id}">+</button></div>
+          </div>
+        </div>`).join('')}
+    </div>`).join('');
+
+  el.querySelectorAll('.drink-card').forEach(c=>c.addEventListener('click',e=>{if(e.target.closest('.drink-add'))return;openDetail(c.dataset.cat,c.dataset.item)}));
+  el.querySelectorAll('.drink-add').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();quickAdd(b.dataset.cat,b.dataset.item)}));
+}
+
+function imgOrEmoji(imageUrl,itemId){
+  if(imageUrl) return `<img src="${imageUrl}" alt="" onerror="this.parentElement.innerHTML='🫖'">`;
+  const emojis={r1:'🌸',r2:'🍮',r3:'🍇',r4:'🥭',r5:'🍓',f1:'🍊',f2:'🍋',f3:'🍑',f4:'🍉',m1:'🫖',m2:'🍂',m3:'🌾',m4:'💜',c1:'🍵',c2:'🤍',c3:'🍑',p1:'🌿',p2:'❄️',p3:'🌼'};
+  return emojis[itemId]||'🫖';
+}
+
+let catObserver;
+function setupCatObserver(){
+  catObserver=new IntersectionObserver(e=>{
+    const v=e.filter(x=>x.isIntersecting).sort((a,b)=>a.boundingClientRect.top-b.boundingClientRect.top);
+    if(v.length) document.querySelectorAll('.cat-tab').forEach(t=>t.classList.toggle('active',t.dataset.cat===v[0].target.id.replace('cat-','')));
+  },{rootMargin:'-120px 0px 0px 0px'});
+  menuData.forEach(c=>{const el=document.getElementById('cat-'+c.id);if(el)catObserver.observe(el)});
+}
+function scrollToCat(catId,btn){
+  document.querySelectorAll('.cat-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');
+  const t=document.getElementById('cat-'+catId);if(t)window.scrollTo({top:t.getBoundingClientRect().top+window.scrollY-110,behavior:'smooth'});
+}
+
+// ══════════════════════════════════════════════
+//  MODAL
+// ══════════════════════════════════════════════
+function setupModalListeners(){
+  document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeModal()});
+  document.getElementById('modalSheet').addEventListener('click',function(e){e.stopPropagation()});
+}
+function openDetail(catId,itemId){
+  const d=findDrink(catId,itemId);if(!d)return;
+  currentDrink={catId,itemId,...d};
+  currentSel={temperature:optionsData.temperature[0]||'正常冰',sweetness:optionsData.sweetness[0]||'标准糖',toppings:[],qty:1};
+  renderModal();
+  document.getElementById('modalOverlay').classList.remove('hidden');document.body.style.overflow='hidden';
+}
+function closeModal(){document.getElementById('modalOverlay').classList.add('hidden');document.body.style.overflow='';currentDrink=null}
+function findDrink(catId,itemId){const c=menuData.find(x=>x.id===catId);return c?c.items.find(x=>x.id===itemId):null}
+
+function renderModal(){
+  if(!currentDrink)return;
+  const d=currentDrink;
+  const tp=currentSel.toppings.reduce((s,t)=>{const o=optionsData.toppings.find(x=>x.name===t);return s+(o?o.price:0)},0);
+  const total=(d.price+tp)*currentSel.qty;
+  document.getElementById('modalBody').innerHTML=`
+    <div class="modal-img-wrap">${d.image_url?`<img src="${d.image_url}" alt="">`:d.emoji||'🫖'}</div>
+    <div class="modal-name">${d.name}</div><div class="modal-price-big" id="modalUnitPrice">${d.price+tp}</div>
+    <div class="option-group"><div class="option-label">温度</div><div class="option-chips" id="chips-temp"></div></div>
+    <div class="option-group"><div class="option-label">甜度</div><div class="option-chips" id="chips-sweet"></div></div>
+    <div class="option-group"><div class="option-label">加料</div><div class="option-chips" id="chips-topping"></div></div>`;
+  populateChips('chips-temp',optionsData.temperature.map(t=>({name:t})),currentSel.temperature,false);
+  populateChips('chips-sweet',optionsData.sweetness.map(s=>({name:s})),currentSel.sweetness,false);
+  populateChips('chips-topping',optionsData.toppings,currentSel.toppings,true);
+  document.getElementById('modalFooter').innerHTML=`
+    <div class="modal-qty"><button id="modalQtyDown">−</button><span id="modalQtyVal">${currentSel.qty}</span><button id="modalQtyUp">+</button></div>
+    <button class="modal-confirm" id="modalConfirmBtn">加入购物车 ¥${total}</button>`;
+  document.getElementById('modalQtyDown').addEventListener('click',()=>changeQty(-1));
+  document.getElementById('modalQtyUp').addEventListener('click',()=>changeQty(1));
+  document.getElementById('modalConfirmBtn').addEventListener('click',addToCart);
+}
+
+function populateChips(containerId,choices,selected,isTopping){
+  const c=document.getElementById(containerId);if(!c)return;c.innerHTML='';
+  choices.forEach(ch=>{
+    const n=ch.name,b=document.createElement('button');b.className='option-chip';
+    if(isTopping){if(Array.isArray(selected)&&selected.includes(n))b.classList.add('selected');b.textContent=n;
+      const t=document.createElement('span');t.className='price-tag';t.textContent='+¥'+ch.price;b.appendChild(t);
+      b.addEventListener('click',e=>{e.stopPropagation();toggleTopping(n)});
+    }else{if(n===selected)b.classList.add('selected');b.textContent=n;
+      b.addEventListener('click',e=>{e.stopPropagation();selectOption(containerId.includes('temp')?'temperature':'sweetness',n)});
+    }c.appendChild(b);
+  });
+}
+
+function updateModalAfterChange(){
+  if(!currentDrink)return;
+  const tp=currentSel.toppings.reduce((s,t)=>{const o=optionsData.toppings.find(x=>x.name===t);return s+(o?o.price:0)},0);
+  const total=(currentDrink.price+tp)*currentSel.qty;
+  const u=document.getElementById('modalUnitPrice');if(u)u.textContent=currentDrink.price+tp;
+  const q=document.getElementById('modalQtyVal');if(q)q.textContent=currentSel.qty;
+  const b=document.getElementById('modalConfirmBtn');if(b)b.textContent='加入购物车 ¥'+total;
+  updateChipSelections('chips-temp',currentSel.temperature);updateChipSelections('chips-sweet',currentSel.sweetness);updateChipSelections('chips-topping',currentSel.toppings);
+}
+function updateChipSelections(id,sel){
+  const c=document.getElementById(id);if(!c)return;
+  c.querySelectorAll('.option-chip').forEach(ch=>{let n=ch.textContent.replace(/\+¥\d+/,'').trim();
+    if(Array.isArray(sel))ch.classList.toggle('selected',sel.includes(n));else ch.classList.toggle('selected',n===sel)});
+}
+function selectOption(k,v){currentSel[k]=v;updateModalAfterChange()}
+function toggleTopping(n){const i=currentSel.toppings.indexOf(n);if(i>=0)currentSel.toppings.splice(i,1);else currentSel.toppings.push(n);updateModalAfterChange()}
+function changeQty(d){currentSel.qty=Math.max(1,Math.min(99,currentSel.qty+d));updateModalAfterChange()}
+
+// ══════════════════════════════════════════════
+//  CART
+// ══════════════════════════════════════════════
+function quickAdd(catId,itemId){
+  const d=findDrink(catId,itemId);if(!d)return;
+  cart.push({id:Date.now(),drinkId:itemId,name:d.name,emoji:d.emoji,image_url:d.image_url,basePrice:d.price,temperature:optionsData.temperature[0]||'正常冰',sweetness:optionsData.sweetness[0]||'标准糖',toppings:[],qty:1});
+  updateCartUI();pulseCart();
+}
+function addToCart(){
+  if(!currentDrink)return;
+  cart.push({id:Date.now(),drinkId:currentDrink.itemId,name:currentDrink.name,emoji:currentDrink.emoji,image_url:currentDrink.image_url,basePrice:currentDrink.price,temperature:currentSel.temperature,sweetness:currentSel.sweetness,toppings:[...currentSel.toppings],qty:currentSel.qty});
+  updateCartUI();closeModal();pulseCart();
+}
+function pulseCart(){const i=document.querySelector('.cart-icon');i.style.transform='scale(1.15)';setTimeout(()=>i.style.transform='',200)}
+
+function getItemPrice(it){const tp=it.toppings.reduce((s,t)=>{const o=optionsData.toppings.find(x=>x.name===t);return s+(o?o.price:0)},0);return(it.basePrice+tp)*it.qty}
+function cartTotal(){return cart.reduce((s,i)=>s+getItemPrice(i),0)}
+function cartCount(){return cart.reduce((s,i)=>s+i.qty,0)}
+
+function updateCartUI(){
+  const cnt=cartCount(),tot=cartTotal();
+  const badge=document.getElementById('cartBadge'),tel=document.getElementById('cartTotal'),hint=document.getElementById('cartHint'),co=document.getElementById('cartCheckout');
+  if(cnt>0){badge.classList.remove('hidden');badge.textContent=cnt;tel.textContent=tot;hint.textContent=`${cnt}件商品`;co.disabled=false}
+  else{badge.classList.add('hidden');tel.textContent='0';hint.textContent='选购中...';co.disabled=true}
+  const dt=document.getElementById('cartDrawerTotal'),dc=document.getElementById('cartDrawerCheckout');
+  if(dt){dt.textContent=tot;dc.disabled=cnt===0}
+}
+
+function setupCartListeners(){
+  document.getElementById('cartIconWrap').addEventListener('click',toggleCart);
+  document.getElementById('cartCheckout').addEventListener('click',checkout);
+  document.getElementById('cartClearBtn').addEventListener('click',clearCart);
+  document.getElementById('cartDrawer').addEventListener('click',function(e){if(e.target===this)closeCartDrawer()});
+  document.getElementById('cartDrawerCheckout').addEventListener('click',checkout);
+}
+function toggleCart(){
+  const d=document.getElementById('cartDrawer');
+  if(d.classList.contains('hidden')){renderCartDrawer();d.classList.remove('hidden');document.body.style.overflow='hidden'}
+  else closeCartDrawer();
+}
+function closeCartDrawer(){document.getElementById('cartDrawer').classList.add('hidden');document.body.style.overflow=''}
+function clearCart(){cart=[];updateCartUI();renderCartDrawer();closeCartDrawer()}
+
+function renderCartDrawer(){
+  const b=document.getElementById('cartDrawerBody'),cnt=cartCount();
+  document.getElementById('cartDrawerTotal').textContent=cartTotal();
+  document.getElementById('cartDrawerCheckout').disabled=cnt===0;
+  if(!cart.length){b.innerHTML='<div class="cart-drawer-empty"><div style="font-size:56px">🛒</div><p>购物车是空的</p><p style="font-size:12px;margin-top:4px">快去挑选喜欢的饮品吧~</p></div>';return}
+  b.innerHTML=cart.map((it,i)=>{
+    const p=getItemPrice(it),opts=[it.temperature,it.sweetness,...it.toppings.map(t=>'+'+t)].join(' · ');
+    return `<div class="cart-item">
+      <div class="cart-item-img">${it.image_url?`<img src="${it.image_url}" alt="">`:it.emoji||'🫖'}</div>
+      <div class="cart-item-info"><div class="cart-item-name">${it.name}</div><div class="cart-item-opts">${opts}</div><div class="cart-item-price">${p}</div></div>
+      <div class="cart-item-qty"><button data-idx="${i}" data-d="-1">−</button><span>${it.qty}</span><button data-idx="${i}" data-d="1">+</button></div></div>`;
+  }).join('');
+  b.querySelectorAll('.cart-item-qty button').forEach(btn=>btn.addEventListener('click',()=>{
+    const idx=parseInt(btn.dataset.idx);cart[idx].qty+=parseInt(btn.dataset.d);
+    if(cart[idx].qty<=0)cart.splice(idx,1);updateCartUI();renderCartDrawer();
+  }));
+}
+
+async function checkout(){
+  if(!cart.length)return;const tot=cartTotal(),cnt=cartCount();
+  try{
+    const items=cart.map(it=>({menu_item_id:it.drinkId,item_name:it.name,base_price:it.basePrice,quantity:it.qty,temperature:it.temperature,sweetness:it.sweetness,toppings:it.toppings}));
+    const order=await api('/api/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items})});
+    cart=[];updateCartUI();renderCartDrawer();closeCartDrawer();
+    showToast('✅','下单成功！',`${cnt}件商品 · ¥${tot}`,`取餐号 <strong style="color:var(--accent-dark);font-size:16px">${order.order_no}</strong>`);
+  }catch(e){alert('下单失败: '+e.message)}
+}
+function showToast(icon,title,desc,extra){
+  const t=document.createElement('div');t.className='order-toast';
+  t.innerHTML=`<div class="toast-card"><div class="toast-icon">${icon}</div><div class="toast-title">${title}</div><div class="toast-desc">${desc}</div><div style="font-size:12px;color:var(--text3)">${extra||''}</div><button class="btn-checkout toast-close" style="margin-top:16px">好的</button></div>`;
+  document.body.appendChild(t);document.body.style.overflow='hidden';
+  t.querySelector('.toast-close').addEventListener('click',()=>{t.remove();document.body.style.overflow=''});
+}
+
+// ══════════════════════════════════════════════
+//  ADMIN
+// ══════════════════════════════════════════════
+function setupAdminListeners(){
+  const brand=document.getElementById('brandClick'),toggle=document.getElementById('adminToggle');
+  let clicks=0,timer=0;
+  brand.addEventListener('click',()=>{clicks++;clearTimeout(timer);timer=setTimeout(()=>clicks=0,2000);if(clicks>=5){clicks=0;if(adminToken){isAdmin=!isAdmin;toggleAdmin()}else{showLogin()}}});
+  toggle.addEventListener('click',()=>{if(adminToken){isAdmin=!isAdmin;toggleAdmin()}else{showLogin()}});
+  setTimeout(()=>toggle.classList.add('show'),3000);
+
+  document.getElementById('uploadCancel').addEventListener('click',closeUpload);
+  document.getElementById('uploadFileInput').addEventListener('change',handleFileSelect);
+  document.getElementById('uploadConfirm').addEventListener('click',doUpload);
+
+  // Login
+  document.getElementById('loginCancel').addEventListener('click',closeLogin);
+  document.getElementById('loginConfirm').addEventListener('click',doLogin);
+  document.getElementById('loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+}
+
+// ── Login ──
+function showLogin(){
+  document.getElementById('loginPassword').value='';
+  document.getElementById('loginError').style.display='none';
+  document.getElementById('loginOverlay').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('loginPassword').focus(),200);
+}
+function closeLogin(){document.getElementById('loginOverlay').classList.add('hidden')}
+async function doLogin(){
+  const pw=document.getElementById('loginPassword').value;
+  if(!pw){document.getElementById('loginError').textContent='请输入密码';document.getElementById('loginError').style.display='block';return}
+  try{
+    const r=await fetch(API+'/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})});
+    if(!r.ok){const e=await r.json();document.getElementById('loginError').textContent=e.detail||'密码错误';document.getElementById('loginError').style.display='block';return}
+    const d=await r.json();adminToken=d.token;localStorage.setItem('guming_admin_token',adminToken);
+    closeLogin();isAdmin=true;toggleAdmin();
+  }catch(e){document.getElementById('loginError').textContent='网络错误';document.getElementById('loginError').style.display='block'}
+}
+
+function toggleAdmin(){
+  const toggle=document.getElementById('adminToggle');
+  const menu=document.getElementById('menuScroll'),admin=document.getElementById('adminPanel'),tabs=document.getElementById('catTabs').parentElement;
+  if(isAdmin){
+    toggle.classList.add('active');
+    menu.classList.add('hidden');tabs.classList.add('hidden');
+    admin.classList.add('show');
+    loadAdminPanel();
+  }else{
+    toggle.classList.remove('active');
+    menu.classList.remove('hidden');tabs.classList.remove('hidden');
+    admin.classList.remove('show');
+  }
+}
+
+async function loadAdminPanel(){
+  const el=document.getElementById('adminPanel');
+  el.innerHTML='<div class="loading">加载中...</div>';
+  try{
+    await fetchAdminItems();
+    renderAdminPanel();
+  }catch(e){el.innerHTML=`<div class="loading">⚠️ ${e.message}</div>`}
+}
+
+function renderAdminPanel(){
+  const el=document.getElementById('adminPanel');
+  el.innerHTML=`<h2>⚙️ 菜单管理 <button class="btn-text" onclick="refreshMenu()">🔄 刷新</button></h2>`+
+    adminItems.map(it=>`
+    <div class="admin-item${it.is_available?'':' unavailable'}" id="admin-item-${it.id}">
+      <div class="admin-item-row">
+        <div class="admin-item-img" onclick="openUpload('${it.id}')">${it.image_url?`<img src="${it.image_url}" alt="">`:(it.id==='r1'?'🌸':it.id==='r2'?'🍮':it.id==='r3'?'🍇':it.id==='r4'?'🥭':it.id==='r5'?'🍓':it.id==='f1'?'🍊':it.id==='f2'?'🍋':it.id==='f3'?'🍑':it.id==='f4'?'🍉':it.id==='m1'?'🫖':it.id==='m2'?'🍂':it.id==='m3'?'🌾':it.id==='m4'?'💜':it.id==='c1'?'🍵':it.id==='c2'?'🤍':it.id==='c3'?'🍑':it.id==='p1'?'🌿':it.id==='p2'?'❄️':'🌼')}</div>
+        <div class="admin-item-body">
+          <input value="${escHtml(it.name)}" data-field="name" data-id="${it.id}" placeholder="名称">
+          <div class="row2">
+            <input type="number" value="${it.price}" data-field="price" data-id="${it.id}" placeholder="价格" step="0.5" min="0" style="max-width:80px">
+            <select data-field="badge" data-id="${it.id}">
+              <option value="">无角标</option><option value="hot" ${it.badge==='hot'?'selected':''}>🔥 热卖</option><option value="new" ${it.badge==='new'?'selected':''}>🆕 上新</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <input value="${escHtml(it.description)}" data-field="description" data-id="${it.id}" placeholder="描述" style="width:100%;margin-bottom:6px">
+      <div class="admin-actions">
+        <button class="primary" onclick="saveItem('${it.id}')">💾 保存</button>
+        <button onclick="openUpload('${it.id}')">📷 换图</button>
+        <button class="${it.is_available?'danger':''}" onclick="toggleAvailability('${it.id}')">${it.is_available?'👁 下架':'👁‍🗨 上架'}</button>
+      </div>
+    </div>`).join('');
+}
+
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+async function saveItem(itemId){
+  const item=document.getElementById('admin-item-'+itemId);if(!item)return;
+  const name=item.querySelector('[data-field=name]').value.trim();
+  const price=parseFloat(item.querySelector('[data-field=price]').value);
+  const badge=item.querySelector('[data-field=badge]').value;
+  const desc=item.querySelector('[data-field=description]').value.trim();
+  if(!name||isNaN(price)){flashMsg('请填写名称和有效价格');return}
+  try{
+    await adminApi(`/api/admin/menu-items/${itemId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,description:desc,price,badge})});
+    flashMsg('✅ 已保存');
+    const orig=adminItems.find(x=>x.id===itemId);if(orig){orig.name=name;orig.description=desc;orig.price=price;orig.badge=badge}
+  }catch(e){flashMsg('❌ '+e.message)}
+}
+
+async function toggleAvailability(itemId){
+  const orig=adminItems.find(x=>x.id===itemId);if(!orig)return;
+  const newVal=!orig.is_available;
+  try{
+    await adminApi(`/api/admin/menu-items/${itemId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({is_available:newVal})});
+    orig.is_available=newVal;
+    renderAdminPanel();flashMsg(newVal?'✅ 已上架':'👁 已下架');
+  }catch(e){flashMsg('❌ '+e.message)}
+}
+
+// Image Upload
+function openUpload(itemId){uploadTargetItemId=itemId;uploadFile=null;
+  document.getElementById('uploadFileInput').value='';
+  document.getElementById('uploadPreview').innerHTML='';
+  document.getElementById('uploadConfirm').disabled=true;
+  document.getElementById('uploadOverlay').classList.remove('hidden');
+}
+function closeUpload(){document.getElementById('uploadOverlay').classList.add('hidden');uploadTargetItemId=null;uploadFile=null}
+function handleFileSelect(e){
+  const file=e.target.files[0];if(!file)return;
+  uploadFile=file;
+  const reader=new FileReader();
+  reader.onload=ev=>{document.getElementById('uploadPreview').innerHTML=`<img src="${ev.target.result}" alt="">`;document.getElementById('uploadConfirm').disabled=false};
+  reader.readAsDataURL(file);
+}
+async function doUpload(){
+  if(!uploadFile||!uploadTargetItemId)return;
+  const form=new FormData();form.append('file',uploadFile);
+  try{
+    const r=await fetch(API+'/api/admin/upload-image',{method:'POST',headers:{'Authorization':'Bearer '+adminToken},body:form});
+    if(!r.ok)throw new Error((await r.json()).detail||'上传失败');
+    const data=await r.json();
+    await adminApi(`/api/admin/menu-items/${uploadTargetItemId}/image?image_url=${encodeURIComponent(data.url)}`,{method:'PUT'});
+    const orig=adminItems.find(x=>x.id===uploadTargetItemId);if(orig)orig.image_url=data.url;
+    const imgEl=document.querySelector(`#admin-item-${uploadTargetItemId} .admin-item-img`);
+    if(imgEl)imgEl.innerHTML=`<img src="${data.url}" alt="">`;
+    closeUpload();flashMsg('✅ 图片已更新');
+  }catch(e){flashMsg('❌ '+e.message)}
+}
+
+async function refreshMenu(){
+  try{await fetchMenu();renderAll();setupCatObserver();flashMsg('✅ 菜单已刷新')}catch(e){flashMsg('❌ '+e.message)}
+}
+
+// Flash message
+let flashTimer;
+function flashMsg(msg){
+  let el=document.querySelector('.toast-msg');if(!el){el=document.createElement('div');el.className='toast-msg';document.body.appendChild(el)}
+  el.textContent=msg;clearTimeout(flashTimer);flashTimer=setTimeout(()=>el&&el.remove(),2000);
+}
+
+// ══════════════════════════════════════════════
+//  BOOT
+// ══════════════════════════════════════════════
+init();
+</script>
+</body>
+</html>
