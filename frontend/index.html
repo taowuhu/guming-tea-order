@@ -659,7 +659,7 @@ async function checkout(){
     const items=cart.map(it=>({menu_item_id:it.drinkId,item_name:it.name,base_price:it.basePrice,quantity:it.qty,temperature:it.temperature,sweetness:it.sweetness,toppings:it.toppings}));
     const order=await api('/api/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items})});
     cart=[];updateCartUI();renderCartDrawer();closeCartDrawer();
-    showToast('✅','下单成功！',`${cnt}件商品 · ¥${tot}`,`取餐号 <strong style="color:var(--accent-dark);font-size:16px">${order.order_no}</strong>`);
+    showToast('✅','下单成功！',`${cnt}件商品 · ¥${tot}`,`下单号 <strong style="color:var(--accent-dark);font-size:16px">${order.order_no}</strong>`);
   }catch(e){alert('下单失败: '+e.message)}
 }
 function showToast(icon,title,desc,extra){
