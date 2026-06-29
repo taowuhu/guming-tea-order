@@ -1,5 +1,5 @@
 """
-古茗风格点单系统 — 生产部署版
+墨禾陶瓷批发系统 — 生产部署版
 一条命令部署：docker-compose up -d
 """
 import sqlite3, json, time, uuid, shutil, os, secrets
@@ -28,7 +28,7 @@ _admin_sessions: dict[str, float] = {}
 # ============================================
 # APP
 # ============================================
-app = FastAPI(title="古茗点单系统", version="2.1")
+app = FastAPI(title="墨禾陶瓷批发", version="2.1")
 
 app.add_middleware(
     CORSMiddleware,
@@ -301,7 +301,7 @@ def update_item_image(item_id: str, image_url: str = "", _=Depends(check_admin))
 
 @app.get("/api/health")
 def health():
-    return {"status":"ok","service":"古茗点单系统"}
+    return {"status":"ok","service":"墨禾陶瓷批发"}
 
 
 # ============================================
@@ -329,7 +329,7 @@ async def serve_frontend(path: str):
 def startup():
     init_db()
     seed_menu()
-    print(f"🍵 古茗点单系统 v2.1 已启动")
+    print(f"🏺 墨禾陶瓷批发 v2.1 已启动")
     print(f"   地址: http://0.0.0.0:{PORT}")
     print(f"   管理密码: {ADMIN_PASSWORD}")
 

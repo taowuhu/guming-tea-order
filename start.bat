@@ -1,7 +1,7 @@
 @echo off
 cd /d "%~dp0"
 echo.
-echo 🍵 古茗点单系统 - v2.1
+echo 🏺 墨禾陶瓷批发 - v2.1
 echo.
 
 if not exist ".venv\Scripts\python.exe" (
