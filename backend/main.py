@@ -73,7 +73,8 @@ def init_db():
             CREATE TABLE IF NOT EXISTS orders (
                 id TEXT PRIMARY KEY, order_no TEXT UNIQUE,
                 status TEXT DEFAULT 'pending', total_price REAL,
-                created_at REAL
+                created_at REAL, customer_name TEXT DEFAULT '',
+                customer_phone TEXT DEFAULT '', customer_address TEXT DEFAULT ''
             );
             CREATE TABLE IF NOT EXISTS order_items (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -172,6 +173,9 @@ class OrderItem(BaseModel):
 
 class CreateOrder(BaseModel):
     items: list[OrderItem]
+    customer_name: str = ""
+    customer_phone: str = ""
+    customer_address: str = ""
 
 class MenuUpdate(BaseModel):
     name: Optional[str] = None; description: Optional[str] = None
@@ -233,7 +237,7 @@ def create_order(req: CreateOrder):
     total = sum((it.base_price + sum(tp.get(t,0) for t in it.toppings)) * it.quantity for it in req.items)
 
     with get_db() as db:
-        db.execute("INSERT INTO orders VALUES (?,?,?,?,?)", (oid, ono, "pending", round(total,2), time.time()))
+        db.execute("INSERT INTO orders VALUES (?,?,?,?,?,?,?,?)", (oid, ono, "pending", round(total,2), time.time(), req.customer_name, req.customer_phone, req.customer_address))
         for it in req.items:
             db.execute(
                 "INSERT INTO order_items (order_id,menu_item_id,item_name,base_price,quantity,temperature,sweetness,toppings) VALUES (?,?,?,?,?,?,?,?)",
@@ -254,10 +258,32 @@ def list_orders(status: Optional[str] = None, limit: int = 50):
             p.append(status)
         q += " ORDER BY created_at DESC LIMIT ?"
         p.append(limit)
-        return [{"id":r["id"],"order_no":r["order_no"],"status":r["status"],
-                 "total_price":r["total_price"],
-                 "created_at":time.strftime("%Y-%m-%d %H:%M:%S",time.localtime(r["created_at"]))}
-                for r in db.execute(q, p).fetchall()]
+        result = []
+        for r in db.execute(q, p).fetchall():
+            items = db.execute("SELECT * FROM order_items WHERE order_id=?",(r["id"],)).fetchall()
+            result.append({
+                "id":r["id"],"order_no":r["order_no"],"status":r["status"],
+                "total_price":r["total_price"],
+                "created_at":time.strftime("%Y-%m-%d %H:%M:%S",time.localtime(r["created_at"])),
+                "customer_name":r["customer_name"] or "",
+                "customer_phone":r["customer_phone"] or "",
+                "customer_address":r["customer_address"] or "",
+                "items":[{"name":i["item_name"],"qty":i["quantity"],"price":i["base_price"],"temperature":i["temperature"],"sweetness":i["sweetness"],"toppings":json.loads(i["toppings"])} for i in items],
+                "item_count":sum(i["quantity"] for i in items)
+            })
+        return result
+
+
+class OrderStatusUpdate(BaseModel):
+    status: str
+
+@app.put("/api/admin/orders/{order_id}/status")
+def update_order_status(order_id: str, req: OrderStatusUpdate, _=Depends(check_admin)):
+    valid = {"pending","paid","shipped","completed","cancelled"}
+    if req.status not in valid: raise HTTPException(400, f"无效状态, 可选: {valid}")
+    with get_db() as db:
+        db.execute("UPDATE orders SET status=? WHERE id=?",(req.status,order_id))
+    return {"ok": True}
 
 
 # ============================================
