@@ -1620,53 +1620,63 @@ async function showItemOptions(itemId){
   const el=document.getElementById('tabContent');
   el.innerHTML='<div class="loading">加载中...</div>';
   try{
-    const r=await adminApi('/api/admin/options?product_id='+itemId);
-    const opts=r.options;
+    // Get both product-specific and global options
+    const [prodR,globalR]=await Promise.all([
+      adminApi('/api/admin/options?product_id='+itemId),
+      adminApi('/api/admin/options?product_id=')
+    ]);
     const item=adminItems.find(i=>i.id===itemId);
     const labels={temperature:'📏 尺寸',sweetness:'🎨 釉色',toppings:'🔧 工艺'};
+    // Merge: product-specific takes priority
+    const groups={};
+    for(const g of ['temperature','sweetness','toppings']){
+      const prod=prodR.options.filter(o=>o.group_key===g);
+      groups[g]=prod.length>0?prod:globalR.options.filter(o=>o.group_key===g);
+    }
     el.innerHTML=`
       <div class="my-page">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
           <button class="btn-text" onclick="renderAdminPanel()">← 返回</button>
           <span style="font-size:14px;font-weight:600">⚙️ ${item?.name||itemId} 的选项</span>
-          <button class="btn-text" onclick="showAddOptForItem('${itemId}')" style="margin-left:auto;color:var(--accent-dark)">＋ 新增</button>
         </div>
-        ${['temperature','sweetness','toppings'].map(g=>{
-          const items=opts.filter(o=>o.group_key===g);
-          return `<div style="background:var(--bg-card);border-radius:12px;padding:10px 12px;margin-bottom:8px">
-            <b style="font-size:13px">${labels[g]}</b>
-            ${items.map(o=>`<div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;font-size:13px">
-              <span>${o.name}${o.price?' +¥'+o.price:''}</span>
-              <span>
-                <button class="btn-text" onclick="editOptForItem(${o.id},'${o.name}',${o.price},'${g}','${itemId}')" style="font-size:11px">✏️</button>
-                <button class="btn-text" onclick="delOptForItem(${o.id},'${itemId}')" style="font-size:11px;color:#e25c3b">×</button>
-              </span>
-            </div>`).join('')||'<div style="color:var(--text3);font-size:12px;margin-top:4px">（继承全局选项）</div>'}
-          </div>`;
-        }).join('')}
+        ${Object.entries(groups).map(([g,items])=>`
+          <div style="background:var(--bg-card);border-radius:12px;padding:10px 12px;margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <b style="font-size:13px">${labels[g]}</b>
+              <button class="btn-text" onclick="addOptInline('${g}','${itemId}')" style="color:var(--accent-dark);font-size:11px">＋ 添加</button>
+            </div>
+            ${items.map(o=>`<div style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:13px">
+              <input value="${o.name}" onchange="saveOptInline(${o.id},'name',this.value,'${itemId}')" style="flex:1;padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font)">
+              ${g==='toppings'?`<input type="number" value="${o.price}" onchange="saveOptInline(${o.id},'price',this.value,'${itemId}')" style="width:60px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:var(--font)" placeholder="¥">`:''}
+              <button class="btn-text" onclick="delOptInline(${o.id},'${itemId}')" style="color:#e25c3b;font-size:14px;padding:2px 4px">×</button>
+            </div>`).join('')||'<div style="color:var(--text3);font-size:12px;margin-top:4px">无选项</div>'}
+          </div>
+        `).join('')}
         <button class="btn-text" onclick="renderAdminPanel()" style="width:100%;margin-top:8px">← 返回</button>
       </div>`;
   }catch(e){el.innerHTML=`<div class="loading">⚠️ ${e.message}</div>`}
 }
 
-function showAddOptForItem(itemId){
-  const g=prompt('选项类型:\\n1=尺寸 2=釉色 3=工艺','1');
-  const keys={1:'temperature',2:'sweetness',3:'toppings'};const gk=keys[parseInt(g)]||'temperature';
-  const name=prompt('选项名称');if(!name)return;
-  let price=0;if(gk==='toppings')price=parseFloat(prompt('价格','0'))||0;
+function addOptInline(gk,itemId){
   (async()=>{
-    try{await adminApi('/api/admin/options?group_key='+gk,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,price,product_id:itemId})});showItemOptions(itemId)}catch(e){flashMsg('❌ '+e.message)}
+    try{await adminApi('/api/admin/options?group_key='+gk,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'新选项',price:0,product_id:itemId})});showItemOptions(itemId)}catch(e){flashMsg('❌ '+e.message)}
   })();
 }
-function editOptForItem(id,oldName,oldPrice,gk,itemId){
-  const name=prompt('名称',oldName);if(!name)return;
-  let price=oldPrice;if(gk==='toppings'){const p=prompt('价格',oldPrice);if(p===null)return;price=parseFloat(p)||0}
+function saveOptInline(id,field,value,itemId){
+  const body={name:'',price:0};
+  if(field==='name') body.name=value;
+  else body.price=parseFloat(value)||0;
+  // We need the current name/price to send both
   (async()=>{
-    try{await adminApi('/api/admin/options/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,price})});showItemOptions(itemId)}catch(e){flashMsg('❌ '+e.message)}
+    try{
+      // Just save the changed field
+      const patch={};patch[field]=field==='price'?parseFloat(value)||0:value;
+      await adminApi('/api/admin/options/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(patch)});
+    }catch(e){flashMsg('❌ '+e.message)}
   })();
 }
-async function delOptForItem(id,itemId){
-  if(!confirm('删除？'))return;
+async function delOptInline(id,itemId){
+  if(!confirm('删除这个选项？'))return;
   try{await adminApi('/api/admin/options/'+id,{method:'DELETE'});showItemOptions(itemId)}catch(e){flashMsg('❌ '+e.message)}
 }
 
