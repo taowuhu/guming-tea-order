@@ -8,7 +8,7 @@ from contextlib import contextmanager
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, Depends, Header
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
@@ -117,6 +117,11 @@ def init_db():
             CREATE TABLE IF NOT EXISTS config (
                 key TEXT PRIMARY KEY,
                 value TEXT DEFAULT ''
+            );
+            CREATE TABLE IF NOT EXISTS uploads (
+                filename TEXT PRIMARY KEY,
+                data BLOB,
+                content_type TEXT DEFAULT 'image/jpeg'
             );
         """)
         # Migration
@@ -368,9 +373,18 @@ async def upload_image(file: UploadFile = File(...), _=Depends(check_admin)):
     if ext not in (".jpg",".jpeg",".png",".gif",".webp",".bmp"):
         raise HTTPException(400, f"不支持的格式: {ext}")
     fname = f"{uuid.uuid4().hex}{ext}"
-    with open(UPLOAD_DIR / fname, "wb") as f:
-        shutil.copyfileobj(file.file, f)
-    return {"url": f"/uploads/{fname}", "filename": fname}
+    data = await file.read()
+    ct = file.content_type or "image/jpeg"
+    with get_db() as db:
+        db.execute("INSERT OR REPLACE INTO uploads (filename,data,content_type) VALUES (?,?,?)",(fname, data, ct))
+    return {"url": f"/api/upload/{fname}", "filename": fname}
+
+@app.get("/api/upload/{filename}")
+def serve_upload(filename: str):
+    with get_db() as db:
+        r = db.execute("SELECT data,content_type FROM uploads WHERE filename=?",(filename,)).fetchone()
+    if not r: raise HTTPException(404,"图片不存在")
+    return Response(content=r["data"], media_type=r["content_type"])
 
 
 @app.get("/api/admin/menu-items")
@@ -709,7 +723,7 @@ def user_mark_paid(order_no: str, uid=Depends(get_current_user)):
     with get_db() as db:
         u = db.execute("SELECT phone FROM users WHERE id=?",(uid,)).fetchone()
         if not u: raise HTTPException(404,"用户不存在")
-        o = db.execute("SELECT * FROM orders WHERE order_no=? AND customer_phone=?",(order_no,u["phone"])).fetchone()
+        o = db.execute("SELECT * FROM orders WHERE (order_no=? AND customer_phone=?) OR (order_no=? AND customer_phone='')",(order_no,u["phone"],order_no)).fetchone()
         if not o: raise HTTPException(404,"订单不存在")
         if o["status"] != "pending": raise HTTPException(400,"该订单已处理")
         db.execute("UPDATE orders SET status='paid' WHERE id=?",(o["id"],))
