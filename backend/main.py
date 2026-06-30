@@ -199,6 +199,17 @@ def change_password(req: ChangePasswordReq, _=Depends(check_admin)):
     set_config("admin_password", req.new_password)
     return {"ok": True}
 
+@app.post("/api/user/orders/{order_no}/pay")
+def user_mark_paid(order_no: str, uid=Depends(get_current_user)):
+    with get_db() as db:
+        u = db.execute("SELECT phone FROM users WHERE id=?",(uid,)).fetchone()
+        if not u: raise HTTPException(404,"用户不存在")
+        o = db.execute("SELECT * FROM orders WHERE order_no=? AND customer_phone=?",(order_no,u["phone"])).fetchone()
+        if not o: raise HTTPException(404,"订单不存在")
+        if o["status"] != "pending": raise HTTPException(400,"该订单已处理")
+        db.execute("UPDATE orders SET status='paid' WHERE id=?",(o["id"],))
+    return {"ok": True}
+
 
 # ============================================
 # MODELS

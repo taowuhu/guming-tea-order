@@ -1751,6 +1751,16 @@ async function changePassword(){
   }catch(e){flashMsg('❌ '+e.message)}
 }
 
+async function markAsPaid(orderNo){
+  try{
+    await fetch('/api/user/orders/'+orderNo+'/pay',{method:'POST',headers:{'Authorization':'Bearer '+userToken}});
+    document.querySelector('.order-toast')?.remove();
+    document.body.style.overflow='';
+    showMyOrders('paid');
+    flashMsg('✅ 已标记为已付款');
+  }catch(e){flashMsg('❌ '+e.message)}
+}
+
 async function goPay(orderNo,amount){
   try{
     const pay=await api('/api/payment');
@@ -1765,6 +1775,7 @@ async function goPay(orderNo,amount){
       ?'<div style="text-align:center;margin:8px 0"><img src="'+pay.wechat+'" style="max-width:180px;border-radius:8px"><br><span style="font-size:11px;color:var(--text3)">💚 微信扫码</span></div>'
       :'<button onclick="window.open(\''+pay.wechat+'\');event.stopPropagation()" style="display:block;width:100%;margin:6px 0;padding:12px;background:#07C160;color:#fff;border:none;border-radius:12px;font-weight:600;font-size:15px;cursor:pointer;font-family:var(--font)">💚 微信付款</button>';
     html+='</div>';
+    html+='<button onclick="markAsPaid(\''+orderNo+'\')" style="margin-top:16px;width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--font)">✅ 我已完成付款</button>';
     showToast('💳','支付',html,'');
   }catch(e){flashMsg('❌ '+e.message)}
 }
