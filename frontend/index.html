@@ -826,40 +826,48 @@ function renderMyPage(){
   if(!currentUser){
     el.innerHTML=`
       <div class="my-page">
-        <div class="my-header">
-          <div class="my-avatar">👤</div>
-          <div class="my-name">未登录</div>
-          <p style="font-size:12px;color:var(--text3);margin-top:4px">登录后可查看订单和收藏</p>
-        </div>
-        <div style="padding:0 10px">
+        <!-- 登录板块 -->
+        <div style="background:var(--bg-card);border-radius:16px;padding:24px 16px;text-align:center;margin-bottom:12px">
+          <div class="my-avatar" style="margin:0 auto 10px">👤</div>
+          <div class="my-name" style="margin-bottom:4px">未登录</div>
+          <p style="font-size:12px;color:var(--text3);margin-bottom:16px">登录后可查看订单和收藏</p>
           <input id="loginPhone" placeholder="请输入手机号" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:12px;font-size:15px;text-align:center;margin-bottom:8px;font-family:var(--font)" type="tel" maxlength="11">
           <button onclick="userLogin()" style="width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:24px;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--font)">登录 / 注册</button>
+        </div>
+        <!-- 其他板块（灰色不可点） -->
+        <div style="background:var(--bg-card);border-radius:16px;padding:4px 0;opacity:0.5">
+          <div class="my-menu-item" style="border-bottom:0.5px solid var(--border)">📋 我的订单 <span>›</span></div>
+          <div class="my-menu-item" style="border-bottom:0.5px solid var(--border)">❤️ 我的收藏 <span>›</span></div>
+          <div class="my-menu-item">📍 收货地址 <span>›</span></div>
         </div>
       </div>`;
     return;
   }
-  // Logged in view - build HTML for order tabs, favorites, addresses
   el.innerHTML=`
     <div class="my-page">
-      <div class="my-header">
-        <div class="my-avatar">👤</div>
+      <!-- 用户信息板块 -->
+      <div style="background:var(--bg-card);border-radius:16px;padding:20px 16px;text-align:center;margin-bottom:12px">
+        <div class="my-avatar" style="margin:0 auto 8px">👤</div>
         <div class="my-name">${currentUser.name||'用户'+currentUser.phone.slice(-4)}</div>
-        <p style="font-size:12px;color:var(--text3)">📞 ${currentUser.phone}</p>
+        <p style="font-size:12px;color:var(--text3);margin-top:2px">📞 ${currentUser.phone}</p>
       </div>
-      <div class="my-menu">
-        <div style="background:var(--bg-card);border-radius:12px;padding:12px;margin-bottom:8px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-            <span style="font-size:14px;font-weight:600">📋 我的订单</span>
-            <span style="font-size:12px;color:var(--accent-dark);cursor:pointer" onclick="showMyOrders()">查看全部 ›</span>
-          </div>
-          <div id="myOrderTabs" style="display:flex;gap:6px;font-size:11px">
-            ${[['pending','⏳ 待付款'],['paid','💰 待发货'],['shipped','📦 待收货'],['completed','✅ 已完成'],['cancelled','❌ 售后']].map(([k,v])=>`<div style="flex:1;text-align:center;padding:6px 2px;cursor:pointer" onclick="showMyOrders('${k}')">${v}</div>`).join('')}
-          </div>
+      <!-- 我的订单板块 -->
+      <div style="background:var(--bg-card);border-radius:16px;padding:14px;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <span style="font-size:14px;font-weight:600">📋 我的订单</span>
+          <span style="font-size:12px;color:var(--accent-dark);cursor:pointer" onclick="showMyOrders()">查看全部 ›</span>
         </div>
-        <div class="my-menu-item" onclick="showMyFavorites()">❤️ 我的收藏 <span>›</span></div>
+        <div style="display:flex;gap:4px;font-size:11px">
+          ${[['pending','⏳ 待付款'],['paid','💰 待发货'],['shipped','📦 待收货'],['completed','✅ 已完成'],['cancelled','❌ 售后']].map(([k,v])=>`<div style="flex:1;text-align:center;padding:8px 2px;cursor:pointer;border-radius:8px" onclick="showMyOrders('${k}')">${v}</div>`).join('')}
+        </div>
+      </div>
+      <!-- 收藏 + 地址板块 -->
+      <div style="background:var(--bg-card);border-radius:16px;padding:4px 0;margin-bottom:12px">
+        <div class="my-menu-item" onclick="showMyFavorites()" style="border-bottom:0.5px solid var(--border)">❤️ 我的收藏 <span>›</span></div>
         <div class="my-menu-item" onclick="showMyAddresses()">📍 收货地址 <span>›</span></div>
       </div>
-      <button onclick="userLogout()" style="width:100%;margin-top:20px;padding:10px;background:none;border:1px solid var(--border);border-radius:12px;color:var(--text3);font-size:14px;cursor:pointer;font-family:var(--font)">退出登录</button>
+      <!-- 退出 -->
+      <button onclick="userLogout()" style="width:100%;padding:12px;background:var(--bg-card);border:none;border-radius:16px;color:var(--text3);font-size:14px;cursor:pointer;font-family:var(--font)">退出登录</button>
     </div>`;
 }
 
