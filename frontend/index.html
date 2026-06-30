@@ -667,20 +667,9 @@ function renderShop(){
       <span>📍 景德镇</span>
       ${siteConfig.phone?`<a class="contact-phone" href="tel:${siteConfig.phone}">📞 ${siteConfig.phone}</a>`:'<span class="contact-phone" style="cursor:default">📞 电话咨询</span>'}
     </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px 0">
-      <span style="font-size:15px;font-weight:700">🔥 好物推荐</span>
-      <span style="font-size:12px;color:var(--accent-dark);cursor:pointer" onclick="switchTab(1)">更多 ›</span>
-    </div>
-    <div class="hot-scroll" id="hotScroll" style="display:flex;gap:10px;padding:8px 14px 4px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch">
-      ${menuData.flatMap(c=>c.items.filter(it=>it.badge==='hot'||it.badge==='new')).slice(0,8).map(it=>`
-        <div class="hot-card" onclick="openDetail('${menuData.find(c=>c.items.some(i=>i.id===it.id))?.id||''}','${it.id}')" style="flex-shrink:0;width:120px;scroll-snap-align:start;background:var(--bg-card);border-radius:var(--radius-sm);overflow:hidden;box-shadow:var(--shadow);cursor:pointer">
-          <div style="width:120px;height:100px;background:linear-gradient(135deg,#f0ebe2,#e8dfd4);display:flex;align-items:center;justify-content:center;font-size:36px">${it.image_url?`<img src="${it.image_url}" style="width:100%;height:100%;object-fit:cover">`:getEmoji(it.id)}</div>
-          <div style="padding:6px 8px">
-            <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${it.name}</div>
-            <div style="font-size:13px;font-weight:700;color:var(--accent-dark)">¥${it.price}</div>
-          </div>
-        </div>
-      `).join('')}
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;margin:0 14px 8px;background:var(--bg-card);border-radius:12px;cursor:pointer" onclick="switchTab(1)">
+      <span style="font-size:14px;font-weight:600">🔥 好物推荐</span>
+      <span style="font-size:12px;color:var(--accent-dark)">查看全部分类 ›</span>
     </div>
     <div class="product-grid" id="shopGrid"></div>`;
   renderShopGrid('');
