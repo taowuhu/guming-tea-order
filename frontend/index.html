@@ -1262,7 +1262,9 @@ function showToast(icon,title,desc,extra){
   t.innerHTML=`<div class="toast-card"><div class="toast-icon">${icon}</div><div class="toast-title">${title}</div><div class="toast-desc">${desc}</div><div style="font-size:12px;color:var(--text3)">${extra||''}</div><button class="btn-checkout toast-close" style="margin-top:16px">好的</button></div>`;
   document.body.appendChild(t);document.body.style.overflow='hidden';
   t.querySelector('.toast-close').addEventListener('click',()=>{t.remove();document.body.style.overflow=''});
-  setTimeout(()=>{if(t.parentNode){t.remove();document.body.style.overflow=''}},5000);
+  setTimeout(()=>{try{if(t.parentNode){t.remove();document.body.style.overflow=''}}catch(e){document.body.style.overflow=''}},5000);
+  // Safety: click outside toast to close
+  t.addEventListener('click',function(e){if(e.target===t){t.remove();document.body.style.overflow=''}});
 }
 
 // ══════════════════════════════════════════════
