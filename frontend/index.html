@@ -1753,7 +1753,7 @@ async function changePassword(){
 
 async function markAsPaid(orderNo){
   try{
-    const r=await fetch('/api/user/orders/'+orderNo+'/pay',{method:'POST',headers:{'Authorization':'Bearer '+userToken}});
+    const r=await fetch('/api/user/orders/'+encodeURIComponent(orderNo)+'/pay',{method:'POST',headers:{'Authorization':'Bearer '+userToken}});
     if(r.status===401){userLogout();renderMyPage();flashMsg('登录已过期，请重新登录');return}
     if(!r.ok){const e=await r.json();throw new Error(e.detail||'操作失败')}
     // Close toast
