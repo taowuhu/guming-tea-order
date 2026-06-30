@@ -449,7 +449,9 @@ def get_config(key, default=""):
 def get_payment():
     return {
         "alipay": get_config("alipay_url"),
-        "wechat": get_config("wechat_url")
+        "wechat": get_config("wechat_url"),
+        "phone": get_config("contact_phone", ""),
+        "banner": get_config("banner_url", "")
     }
 
 @app.get("/api/admin/config")

@@ -332,6 +332,116 @@ body{
   font-size:14px;animation:fadeIn 0.3s;white-space:nowrap;
 }
 
+/* Bottom tabs */
+.tab-bar{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);z-index:100;
+  width:100%;max-width:420px;background:rgba(255,255,255,0.95);backdrop-filter:blur(12px);
+  border-top:0.5px solid var(--border);display:flex;padding:6px 0 calc(6px + var(--safe-bottom));
+}
+.tab-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+  background:none;border:none;font-size:11px;color:var(--text3);cursor:pointer;
+  padding:4px 0;font-family:var(--font);
+}
+.tab-btn.active{color:var(--accent-dark)}
+.tab-btn .tab-icon{font-size:20px}
+
+/* Search bar */
+.search-bar{
+  display:flex;align-items:center;gap:8px;padding:8px 14px;
+  background:rgba(0,0,0,0.04);border-radius:24px;margin:8px 14px;
+}
+.search-bar input{
+  flex:1;border:none;background:none;font-size:14px;outline:none;font-family:var(--font);
+}
+
+/* Banner */
+.banner-area{
+  margin:4px 14px 8px;height:150px;border-radius:var(--radius-md);
+  background:linear-gradient(135deg,#e8dfd4,#d4c8b8,#c4b5a0);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text2);font-size:14px;overflow:hidden;
+}
+.banner-area img{width:100%;height:100%;object-fit:cover}
+
+/* Contact bar */
+.contact-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:6px 14px;margin:0 14px 8px;
+  background:rgba(255,255,255,0.6);border-radius:12px;font-size:13px;
+}
+.contact-phone{
+  display:flex;align-items:center;gap:4px;color:var(--accent-dark);
+  text-decoration:none;font-weight:600;
+}
+
+/* Product grid (2 columns) */
+.product-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 14px 90px;
+}
+.product-card{
+  background:var(--bg-card);border-radius:var(--radius-md);overflow:hidden;
+  box-shadow:var(--shadow);cursor:pointer;
+}
+.product-card-img{
+  width:100%;aspect-ratio:1;background:linear-gradient(135deg,#f0ebe2,#e8dfd4);
+  display:flex;align-items:center;justify-content:center;font-size:40px;
+}
+.product-card-img img{width:100%;height:100%;object-fit:cover}
+.product-card-info{padding:8px 10px}
+.product-card-name{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.product-card-desc{font-size:11px;color:var(--text3);margin:2px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.product-card-bottom{display:flex;justify-content:space-between;align-items:center}
+.product-card-price{font-size:15px;font-weight:700;color:var(--accent-dark)}
+.product-card-price::before{content:'¥';font-size:11px}
+.product-card-add{
+  width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;
+  border:none;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+}
+
+/* My page */
+.my-page{padding:20px 14px 90px}
+.my-header{text-align:center;padding:20px 0}
+.my-avatar{width:64px;height:64px;border-radius:50%;background:var(--accent-soft);margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:28px}
+.my-name{font-size:16px;font-weight:600}
+.my-menu{margin-top:16px}
+.my-menu-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px;background:var(--bg-card);border-radius:12px;margin-bottom:8px;
+  font-size:14px;cursor:pointer;
+}
+
+/* Cart page */
+.cart-page{padding:0 14px 90px}
+.cart-page-empty{text-align:center;padding:80px 20px;color:var(--text3)}
+.cart-page-item{
+  display:flex;gap:10px;padding:12px 0;border-bottom:0.5px solid var(--border);align-items:center;
+}
+.cart-page-img{
+  width:60px;height:60px;border-radius:10px;flex-shrink:0;
+  background:linear-gradient(135deg,#f0ebe2,#e8dfd4);
+  display:flex;align-items:center;justify-content:center;font-size:28px;
+}
+.cart-page-img img{width:100%;height:100%;object-fit:cover;border-radius:10px}
+.cart-page-info{flex:1;min-width:0}
+.cart-page-name{font-size:14px;font-weight:600}
+.cart-page-opts{font-size:11px;color:var(--text3)}
+.cart-page-price{font-size:14px;font-weight:700;color:var(--accent-dark)}
+.cart-page-actions{display:flex;align-items:center;gap:8px}
+.cart-page-actions button{
+  width:28px;height:28px;border-radius:50%;border:0.5px solid var(--border);
+  background:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+}
+.cart-page-footer{
+  position:fixed;bottom:60px;left:50%;transform:translateX(-50%);z-index:99;
+  width:100%;max-width:420px;padding:12px 14px;
+  background:rgba(255,255,255,0.95);backdrop-filter:blur(12px);
+  border-top:0.5px solid var(--border);display:flex;align-items:center;gap:12px;
+}
+.cart-page-footer button{
+  flex:1;padding:12px;border-radius:24px;border:none;font-size:15px;font-weight:600;cursor:pointer;
+  font-family:var(--font);background:var(--accent);color:#fff;
+}
 @media(max-width:360px){
   .drink-img{width:74px;height:74px}
   .drink-name{font-size:14px}
@@ -344,27 +454,17 @@ body{
 <div class="app" id="app">
   <header class="header">
     <div class="header-brand" id="brandClick">墨禾<span>·</span>陶瓷</div>
-    <div class="header-right">
-      <div class="header-loc">📍 景德镇</div>
-      <button class="header-admin" id="adminToggle" title="管理">⚙️</button>
-    </div>
+    <div class="header-loc">📍 景德镇</div>
+    <button class="header-admin" id="adminToggle" title="管理">⚙️</button>
   </header>
-  <div class="cat-tabs-wrap"><div class="cat-tabs" id="catTabs"></div></div>
-  <div class="menu-scroll" id="menuScroll"><div class="loading">🏺 加载菜单中...</div></div>
-  <div class="admin-panel" id="adminPanel"><div class="loading">加载管理面板...</div></div>
 
-  <div class="cart-bar" id="cartBar">
-    <div class="cart-icon-wrap" id="cartIconWrap">
-      <div class="cart-icon">
-        <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM7.2 14.8V14h10.58l2.72-5.44L18.21 8H6.2l-.97-4H1v2h2.6l3.51 12h14.3v-2H7.2z"/></svg>
-      </div>
-      <div class="cart-badge hidden" id="cartBadge">0</div>
-    </div>
-    <div class="cart-info">
-      <div class="cart-total" id="cartTotal">0</div>
-      <div class="cart-hint" id="cartHint">选购中...</div>
-    </div>
-    <button class="btn-checkout" id="cartCheckout" disabled>提交询价</button>
+  <div class="tab-content" id="tabContent"></div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab(0)"><span class="tab-icon">🏠</span>商城</button>
+    <button class="tab-btn" onclick="switchTab(1)"><span class="tab-icon">🔍</span>分类</button>
+    <button class="tab-btn" onclick="switchTab(2)"><span class="tab-icon">🛒</span>购物车<span class="cart-badge hidden" id="tabCartBadge">0</span></button>
+    <button class="tab-btn" onclick="switchTab(3)"><span class="tab-icon">👤</span>我的</button>
   </div>
 </div>
 
@@ -420,6 +520,7 @@ let currentSel={temperature:'正常冰',sweetness:'标准糖',toppings:[],qty:1}
 let isAdmin=false, adminItems=[], adminCats=[];
 let uploadTargetItemId=null, uploadFile=null;
 let adminToken=localStorage.getItem('guming_admin_token')||'';
+let currentTab=0;
 const API='';
 
 // ══════════════════════════════════════════════
@@ -451,9 +552,10 @@ async function adminApi(path,opts={}){
 async function init(){
   try{
     await Promise.all([fetchMenu(),fetchOptions()]);
-    renderAll();setupCatObserver();setupModalListeners();setupCartListeners();setupAdminListeners();
+    setupModalListeners();setupCartListeners();setupAdminListeners();
+    switchTab(0);
   }catch(e){
-    document.getElementById('menuScroll').innerHTML=`<div class="loading">⚠️ ${e.message}<br><small>请确认后端已启动</small></div>`;
+    document.getElementById('tabContent').innerHTML=`<div class="loading">⚠️ ${e.message}<br><small>请确认后端已启动</small></div>`;
   }
 }
 
@@ -520,6 +622,197 @@ function setupCatObserver(){
 function scrollToCat(catId,btn){
   document.querySelectorAll('.cat-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');
   const t=document.getElementById('cat-'+catId);if(t)window.scrollTo({top:t.getBoundingClientRect().top+window.scrollY-110,behavior:'smooth'});
+}
+
+// ══════════════════════════════════════════════
+//  TAB NAVIGATION
+// ══════════════════════════════════════════════
+function switchTab(n){
+  currentTab=n;
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===n));
+  if(isAdmin){toggleAdmin();return}
+  if(n===0) renderShop();
+  else if(n===1) renderCategories();
+  else if(n===2) renderCartPage();
+  else if(n===3) renderMyPage();
+}
+
+// ══════════════════════════════════════════════
+//  TAB 0: 商城 (SHOP)
+// ══════════════════════════════════════════════
+function searchProducts(query){
+  const q=query.toLowerCase().trim();
+  const allItems=[];
+  menuData.forEach(cat=>cat.items.forEach(it=>allItems.push({...it,catId:cat.id})));
+  if(!q) return allItems;
+  return allItems.filter(it=>it.name.toLowerCase().includes(q)||(it.desc||'').toLowerCase().includes(q));
+}
+
+function renderShop(){
+  const el=document.getElementById('tabContent');
+  const phone=localStorage.getItem('guming_contact_phone')||'';
+  el.innerHTML=`
+    <div class="search-bar">
+      <span style="font-size:16px">🔍</span>
+      <input type="text" id="shopSearch" placeholder="搜索产品..." oninput="renderShopGrid(this.value)">
+    </div>
+    <div class="banner-area" id="bannerArea">
+      ${localStorage.getItem('guming_banner_url')?`<img src="${localStorage.getItem('guming_banner_url')}" alt="">`:'🏺 墨禾陶瓷 · 匠心手作'}
+    </div>
+    <div class="contact-bar">
+      <span>📍 景德镇</span>
+      ${phone?`<a class="contact-phone" href="tel:${phone}">📞 ${phone}</a>`:'<span class="contact-phone" style="cursor:default">📞 电话咨询</span>'}
+    </div>
+    <div class="product-grid" id="shopGrid"></div>`;
+  renderShopGrid('');
+}
+
+function renderShopGrid(query){
+  const grid=document.getElementById('shopGrid');
+  if(!grid) return;
+  const items=searchProducts(query);
+  if(!items.length){grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text3)">未找到产品</div>';return}
+  grid.innerHTML=items.map(it=>`
+    <div class="product-card" onclick="openDetail('${it.catId}','${it.id}')">
+      <div class="product-card-img">${imgOrEmoji(it.image_url,it.id)}</div>
+      <div class="product-card-info">
+        <div class="product-card-name">${it.name}</div>
+        <div class="product-card-desc">${it.desc||''}</div>
+        <div class="product-card-bottom">
+          <div class="product-card-price">${it.price}</div>
+          <button class="product-card-add" onclick="event.stopPropagation();quickAdd('${it.catId}','${it.id}')">+</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════
+//  TAB 1: 分类 (CATEGORIES)
+// ══════════════════════════════════════════════
+function renderCategories(){
+  const el=document.getElementById('tabContent');
+  el.innerHTML=`
+    <div style="padding:8px 14px">
+      <div class="search-bar" style="margin:0 0 12px">
+        <span style="font-size:16px">🔍</span>
+        <input type="text" id="catSearch" placeholder="搜索分类..." oninput="renderCatList(this.value)">
+      </div>
+      <div id="catList"></div>
+    </div>`;
+  renderCatList('');
+}
+
+function renderCatList(query){
+  const list=document.getElementById('catList');
+  if(!list) return;
+  const q=query.toLowerCase().trim();
+  let cats=menuData;
+  if(q) cats=cats.filter(c=>c.name.toLowerCase().includes(q)||c.items.some(i=>i.name.toLowerCase().includes(q)));
+  list.innerHTML=cats.map(cat=>`
+    <div class="my-menu-item" onclick="enterCategory('${cat.id}')">
+      <span>${cat.name}</span>
+      <span style="color:var(--text3);font-size:13px">${cat.items.length}款 →</span>
+    </div>`).join('');
+}
+
+function enterCategory(catId){
+  const cat=menuData.find(c=>c.id===catId);
+  if(!cat) return;
+  const el=document.getElementById('tabContent');
+  el.innerHTML=`
+    <div style="padding:8px 14px">
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 0;margin-bottom:8px">
+        <button class="btn-text" onclick="switchTab(1)" style="font-size:18px">←</button>
+        <span style="font-size:16px;font-weight:600">${cat.name}</span>
+        <span style="color:var(--text3);font-size:13px">${cat.items.length}款</span>
+      </div>
+      <div class="product-grid">${cat.items.map(it=>`
+        <div class="product-card" onclick="openDetail('${cat.id}','${it.id}')">
+          <div class="product-card-img">${imgOrEmoji(it.image_url,it.id)}</div>
+          <div class="product-card-info">
+            <div class="product-card-name">${it.name}</div>
+            <div class="product-card-desc">${it.desc||''}</div>
+            <div class="product-card-bottom">
+              <div class="product-card-price">${it.price}</div>
+              <button class="product-card-add" onclick="event.stopPropagation();quickAdd('${cat.id}','${it.id}')">+</button>
+            </div>
+          </div>
+        </div>`).join('')}</div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════
+//  TAB 2: 购物车 (CART PAGE)
+// ══════════════════════════════════════════════
+function renderCartPage(){
+  const el=document.getElementById('tabContent');
+  const cnt=cartCount(),tot=cartTotal();
+  if(!cart.length){
+    el.innerHTML=`
+      <div class="cart-page">
+        <div class="cart-page-empty">
+          <div style="font-size:56px">🛒</div>
+          <p style="margin-top:12px">购物车是空的</p>
+          <p style="font-size:12px;color:var(--text3);margin-top:4px">快去商城挑选心仪的陶瓷吧~</p>
+        </div>
+      </div>`;
+    return;
+  }
+  el.innerHTML=`
+    <div class="cart-page">
+      ${cart.map((it,i)=>{
+        const p=getItemPrice(it),opts=[it.temperature,it.sweetness,...it.toppings.map(t=>'+'+t)].join(' · ');
+        return `<div class="cart-page-item">
+          <div class="cart-page-img">${it.image_url?`<img src="${it.image_url}" alt="">`:it.emoji||'🏺'}</div>
+          <div class="cart-page-info">
+            <div class="cart-page-name">${it.name}</div>
+            <div class="cart-page-opts">${opts}</div>
+            <div class="cart-page-price">¥${p}</div>
+          </div>
+          <div class="cart-page-actions">
+            <button onclick="cartPageQty(${i},-1)">−</button>
+            <span style="min-width:20px;text-align:center;font-weight:600">${it.qty}</span>
+            <button onclick="cartPageQty(${i},1)">+</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="cart-page-footer">
+      <span style="font-size:16px;font-weight:700">合计 ¥${tot} · ${cnt}件</span>
+      <button onclick="checkout()">提交询价</button>
+    </div>`;
+}
+
+function cartPageQty(idx,d){
+  cart[idx].qty+=d;
+  if(cart[idx].qty<=0) cart.splice(idx,1);
+  updateCartUI();
+  renderCartPage();
+}
+
+// ══════════════════════════════════════════════
+//  TAB 3: 我的 (MY PAGE)
+// ══════════════════════════════════════════════
+function renderMyPage(){
+  const el=document.getElementById('tabContent');
+  el.innerHTML=`
+    <div class="my-page">
+      <div class="my-header">
+        <div class="my-avatar">👤</div>
+        <div class="my-name">陶瓷爱好者</div>
+      </div>
+      <div class="my-menu">
+        <div class="my-menu-item" onclick="switchTab(0);document.getElementById('shopSearch')&&document.getElementById('shopSearch').focus()">
+          <span>📋 浏览商品</span><span style="color:var(--text3)">→</span>
+        </div>
+        <div class="my-menu-item" onclick="switchTab(2)">
+          <span>📦 我的询价单</span><span style="color:var(--text3)">→</span>
+        </div>
+        <div class="my-menu-item" onclick="showLogin()">
+          <span>🔐 管理后台</span><span style="color:var(--text3)">→</span>
+        </div>
+      </div>
+    </div>`;
 }
 
 // ══════════════════════════════════════════════
@@ -599,13 +892,15 @@ function quickAdd(catId,itemId){
   const d=findDrink(catId,itemId);if(!d)return;
   cart.push({id:Date.now(),drinkId:itemId,name:d.name,emoji:d.emoji,image_url:d.image_url,basePrice:d.price,temperature:optionsData.temperature[0]||'中号',sweetness:optionsData.sweetness[0]||'白釉',toppings:[],qty:1});
   updateCartUI();pulseCart();
+  if(currentTab===2) renderCartPage();
 }
 function addToCart(){
   if(!currentDrink)return;
   cart.push({id:Date.now(),drinkId:currentDrink.itemId,name:currentDrink.name,emoji:currentDrink.emoji,image_url:currentDrink.image_url,basePrice:currentDrink.price,temperature:currentSel.temperature,sweetness:currentSel.sweetness,toppings:[...currentSel.toppings],qty:currentSel.qty});
   updateCartUI();closeModal();pulseCart();
+  if(currentTab===2) renderCartPage();
 }
-function pulseCart(){const i=document.querySelector('.cart-icon');i.style.transform='scale(1.15)';setTimeout(()=>i.style.transform='',200)}
+function pulseCart(){const i=document.querySelector('.cart-icon');if(i){i.style.transform='scale(1.15)';setTimeout(()=>i.style.transform='',200)}}
 
 function getItemPrice(it){const tp=it.toppings.reduce((s,t)=>{const o=optionsData.toppings.find(x=>x.name===t);return s+(o?o.price:0)},0);return(it.basePrice+tp)*it.qty}
 function cartTotal(){return cart.reduce((s,i)=>s+getItemPrice(i),0)}
@@ -613,16 +908,14 @@ function cartCount(){return cart.reduce((s,i)=>s+i.qty,0)}
 
 function updateCartUI(){
   const cnt=cartCount(),tot=cartTotal();
-  const badge=document.getElementById('cartBadge'),tel=document.getElementById('cartTotal'),hint=document.getElementById('cartHint'),co=document.getElementById('cartCheckout');
-  if(cnt>0){badge.classList.remove('hidden');badge.textContent=cnt;tel.textContent=tot;hint.textContent=`${cnt}件商品`;co.disabled=false}
-  else{badge.classList.add('hidden');tel.textContent='0';hint.textContent='选购中...';co.disabled=true}
+  const badge=document.getElementById('tabCartBadge');
+  if(cnt>0){badge.classList.remove('hidden');badge.textContent=cnt}
+  else{badge.classList.add('hidden')}
   const dt=document.getElementById('cartDrawerTotal'),dc=document.getElementById('cartDrawerCheckout');
   if(dt){dt.textContent=tot;dc.disabled=cnt===0}
 }
 
 function setupCartListeners(){
-  document.getElementById('cartIconWrap').addEventListener('click',toggleCart);
-  document.getElementById('cartCheckout').addEventListener('click',checkout);
   document.getElementById('cartClearBtn').addEventListener('click',clearCart);
   document.getElementById('cartDrawer').addEventListener('click',function(e){if(e.target===this)closeCartDrawer()});
   document.getElementById('cartDrawerCheckout').addEventListener('click',checkout);
@@ -659,6 +952,7 @@ async function checkout(){
     const items=cart.map(it=>({menu_item_id:it.drinkId,item_name:it.name,base_price:it.basePrice,quantity:it.qty,temperature:it.temperature,sweetness:it.sweetness,toppings:it.toppings}));
     const order=await api('/api/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items})});
     cart=[];updateCartUI();renderCartDrawer();closeCartDrawer();
+    if(currentTab===2) renderCartPage();
     const pay=await api('/api/payment');
     const hasPay=pay.alipay||pay.wechat;
     showToast('✅','下单成功！',`${cnt}件商品 · ¥${tot}`,
@@ -719,21 +1013,17 @@ async function doLogin(){
 
 function toggleAdmin(){
   const toggle=document.getElementById('adminToggle');
-  const menu=document.getElementById('menuScroll'),admin=document.getElementById('adminPanel'),tabs=document.getElementById('catTabs').parentElement;
   if(isAdmin){
     toggle.classList.add('active');
-    menu.classList.add('hidden');tabs.classList.add('hidden');
-    admin.classList.add('show');
     loadAdminPanel();
   }else{
     toggle.classList.remove('active');
-    menu.classList.remove('hidden');tabs.classList.remove('hidden');
-    admin.classList.remove('show');
+    switchTab(currentTab);
   }
 }
 
 async function loadAdminPanel(){
-  const el=document.getElementById('adminPanel');
+  const el=document.getElementById('tabContent');
   el.innerHTML='<div class="loading">加载中...</div>';
   try{
     await Promise.all([fetchAdminItems(),fetchAdminCats(),fetchAdminOpts()]);
@@ -773,7 +1063,7 @@ function savePayCfg(){
 }
 
 function renderAdminPanel(){
-  const el=document.getElementById('adminPanel');
+  const el=document.getElementById('tabContent');
   el.innerHTML=`<h2>⚙️ 产品管理 <button class="btn-text" onclick="refreshMenu()">🔄 刷新</button> <button class="btn-text" onclick="showOrders()">📋 订单管理</button> <button class="btn-text" onclick="showAddModal()" style="color:var(--accent-dark);font-weight:700">＋ 新增产品</button></h2>`+
     `<div class="cat-manage"><div class="cat-manage-title">📂 分类管理 <button class="btn-text" onclick="showAddCat()" style="color:var(--accent-dark)">＋ 新增分类</button></div>`+
     adminCats.map(c=>`<div class="cat-row"><input value="${escHtml(c.name)}" data-cat-id="${c.id}" class="cat-name-input"> <button class="btn-text" onclick="saveCat('${c.id}')">💾</button> <button class="btn-text" style="color:#e25c3b" onclick="deleteCat('${c.id}')">🗑</button></div>`).join('')+
@@ -980,12 +1270,12 @@ async function delOpt(id){
 }
 
 async function refreshMenu(){
-  try{await fetchMenu();renderAll();setupCatObserver();flashMsg('✅ 菜单已刷新')}catch(e){flashMsg('❌ '+e.message)}
+  try{await fetchMenu();switchTab(currentTab);flashMsg('✅ 菜单已刷新')}catch(e){flashMsg('❌ '+e.message)}
 }
 
 // Order management
 async function showOrders(){
-  const el=document.getElementById('adminPanel');
+  const el=document.getElementById('tabContent');
   el.innerHTML='<div class="loading">加载订单中...</div>';
   try{
     const orders=await api('/api/orders');
