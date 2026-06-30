@@ -268,16 +268,30 @@ def get_options(item_id: str = None):
 
 
 @app.post("/api/orders")
-def create_order(req: CreateOrder):
+def create_order(req: CreateOrder, authorization: str = Header(None)):
     if not req.items:
         raise HTTPException(400, "订单不能为空")
+    # Auto-fill customer info from logged-in user
+    customer_name = req.customer_name
+    customer_phone = req.customer_phone
+    if authorization and not customer_phone:
+        try:
+            token = authorization.replace("Bearer ", "")
+            if token in _user_sessions:
+                uid, _ = _user_sessions[token]
+                with get_db() as db:
+                    u = db.execute("SELECT phone,name FROM users WHERE id=?",(uid,)).fetchone()
+                    if u:
+                        customer_phone = u["phone"]
+                        customer_name = customer_name or u["name"]
+        except: pass
     oid = str(uuid.uuid4())[:8]
     ono = f"#{int(time.time()) % 100000:05d}"
     tp = {"礼盒包装":10,"烫金Logo":15,"定制贺卡":5,"防震包装":8,"加急制作":20,"大师签名":50}
     total = sum((it.base_price + sum(tp.get(t,0) for t in it.toppings)) * it.quantity for it in req.items)
 
     with get_db() as db:
-        db.execute("INSERT INTO orders VALUES (?,?,?,?,?,?,?,?)", (oid, ono, "pending", round(total,2), time.time(), req.customer_name, req.customer_phone, req.customer_address))
+        db.execute("INSERT INTO orders VALUES (?,?,?,?,?,?,?,?)", (oid, ono, "pending", round(total,2), time.time(), customer_name, customer_phone, req.customer_address))
         for it in req.items:
             db.execute(
                 "INSERT INTO order_items (order_id,menu_item_id,item_name,base_price,quantity,temperature,sweetness,toppings) VALUES (?,?,?,?,?,?,?,?)",
