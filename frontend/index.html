@@ -551,7 +551,7 @@ async function adminApi(path,opts={}){
 // ══════════════════════════════════════════════
 async function init(){
   try{
-    await Promise.all([fetchMenu(),fetchOptions()]);
+    await Promise.all([fetchMenu(),fetchOptions()]);loadSiteConfig();
     setupModalListeners();setupCartListeners();setupAdminListeners();
     switchTab(0);
   }catch(e){
@@ -648,20 +648,24 @@ function searchProducts(query){
   return allItems.filter(it=>it.name.toLowerCase().includes(q)||(it.desc||'').toLowerCase().includes(q));
 }
 
+let siteConfig={phone:'',banner:''};
+async function loadSiteConfig(){
+  try{const c=await api('/api/payment');siteConfig={phone:c.phone||'',banner:c.banner||''};}catch(e){}
+}
+
 function renderShop(){
   const el=document.getElementById('tabContent');
-  const phone=localStorage.getItem('guming_contact_phone')||'';
   el.innerHTML=`
     <div class="search-bar">
       <span style="font-size:16px">🔍</span>
       <input type="text" id="shopSearch" placeholder="搜索产品..." oninput="renderShopGrid(this.value)">
     </div>
     <div class="banner-area" id="bannerArea">
-      ${localStorage.getItem('guming_banner_url')?`<img src="${localStorage.getItem('guming_banner_url')}" alt="">`:'🏺 墨禾陶瓷 · 匠心手作'}
+      ${siteConfig.banner?`<img src="${siteConfig.banner}" alt="">`:'🏺 墨禾陶瓷 · 匠心手作'}
     </div>
     <div class="contact-bar">
       <span>📍 景德镇</span>
-      ${phone?`<a class="contact-phone" href="tel:${phone}">📞 ${phone}</a>`:'<span class="contact-phone" style="cursor:default">📞 电话咨询</span>'}
+      ${siteConfig.phone?`<a class="contact-phone" href="tel:${siteConfig.phone}">📞 ${siteConfig.phone}</a>`:'<span class="contact-phone" style="cursor:default">📞 电话咨询</span>'}
     </div>
     <div class="product-grid" id="shopGrid"></div>`;
   renderShopGrid('');
@@ -1047,17 +1051,23 @@ async function loadPayConfig(){
     setTimeout(()=>{
       const a=document.getElementById('cfgAlipay');if(a)a.value=cfg.alipay_url||'';
       const w=document.getElementById('cfgWechat');if(w)w.value=cfg.wechat_url||'';
+      const p=document.getElementById('cfgPhone');if(p)p.value=cfg.contact_phone||'';
+      const b=document.getElementById('cfgBanner');if(b)b.value=cfg.banner_url||'';
     },100);
   }catch(e){}
 }
 function savePayCfg(){
   const alipay=document.getElementById('cfgAlipay').value.trim();
   const wechat=document.getElementById('cfgWechat').value.trim();
+  const phone=document.getElementById('cfgPhone').value.trim();
+  const banner=document.getElementById('cfgBanner').value.trim();
   (async()=>{
     try{
       await adminApi('/api/admin/config',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'alipay_url',value:alipay})});
       await adminApi('/api/admin/config',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'wechat_url',value:wechat})});
-      flashMsg('✅ 付款配置已保存');
+      await adminApi('/api/admin/config',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'contact_phone',value:phone})});
+      await adminApi('/api/admin/config',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'banner_url',value:banner})});
+      flashMsg('✅ 配置已保存');
     }catch(e){flashMsg('❌ '+e.message)}
   })();
 }
@@ -1077,9 +1087,11 @@ function renderAdminPanel(){
         `</div>`;
     }).join('')+
     `</div>`+
-    `<div class="cat-manage"><div class="cat-manage-title">💳 付款设置</div>`+
-    `<div class="cat-row"><span style="width:60px;font-size:13px">💙 支付宝</span><input id="cfgAlipay" placeholder="付款码链接或 URL" class="cat-name-input"> <button class="btn-text" onclick="savePayCfg()" style="color:var(--accent-dark)">💾</button></div>`+
-    `<div class="cat-row"><span style="width:60px;font-size:13px">💚 微信</span><input id="cfgWechat" placeholder="付款码链接或 URL" class="cat-name-input"> <button class="btn-text" onclick="savePayCfg()" style="color:var(--accent-dark)">💾</button></div>`+
+    `<div class="cat-manage"><div class="cat-manage-title">⚙️ 站点设置</div>`+
+    `<div class="cat-row"><span style="width:60px;font-size:13px">🖼️ Banner</span><input id="cfgBanner" placeholder="Banner图片URL" class="cat-name-input" style="font-size:12px"> <button class="btn-text" onclick="savePayCfg()" style="color:var(--accent-dark)">💾</button></div>`+
+    `<div class="cat-row"><span style="width:60px;font-size:13px">📞 电话</span><input id="cfgPhone" placeholder="如 13800000000" class="cat-name-input" style="font-size:12px"> <button class="btn-text" onclick="savePayCfg()" style="color:var(--accent-dark)">💾</button></div>`+
+    `<div class="cat-row"><span style="width:60px;font-size:13px">💙 支付宝</span><input id="cfgAlipay" placeholder="付款链接" class="cat-name-input" style="font-size:12px"> <button class="btn-text" onclick="savePayCfg()" style="color:var(--accent-dark)">💾</button></div>`+
+    `<div class="cat-row"><span style="width:60px;font-size:13px">💚 微信</span><input id="cfgWechat" placeholder="付款链接" class="cat-name-input" style="font-size:12px"> <button class="btn-text" onclick="savePayCfg()" style="color:var(--accent-dark)">💾</button></div>`+
     `</div>`+
     adminItems.map(it=>`
     <div class="admin-item${it.is_available?'':' unavailable'}" id="admin-item-${it.id}">
