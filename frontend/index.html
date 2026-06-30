@@ -827,12 +827,14 @@ function renderMyPage(){
     el.innerHTML=`
       <div class="my-page">
         <!-- 登录板块 -->
-        <div style="background:var(--bg-card);border-radius:16px;padding:24px 16px;text-align:center;margin-bottom:12px">
+        <div style="background:var(--bg-card);border-radius:16px;padding:24px 16px;text-align:center;margin-bottom:12px;cursor:pointer" onclick="showLoginForm()">
           <div class="my-avatar" style="margin:0 auto 10px">👤</div>
           <div class="my-name" style="margin-bottom:4px">未登录</div>
-          <p style="font-size:12px;color:var(--text3);margin-bottom:16px">登录后可查看订单和收藏</p>
-          <input id="loginPhone" placeholder="请输入手机号" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:12px;font-size:15px;text-align:center;margin-bottom:8px;font-family:var(--font)" type="tel" maxlength="11">
-          <button onclick="userLogin()" style="width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:24px;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--font)">登录 / 注册</button>
+          <p style="font-size:12px;color:var(--text3)">点击头像登录</p>
+          <div id="loginFormArea" style="display:none;margin-top:12px">
+            <input id="loginPhone" placeholder="请输入手机号" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:12px;font-size:15px;text-align:center;margin-bottom:8px;font-family:var(--font)" type="tel" maxlength="11">
+            <button onclick="event.stopPropagation();userLogin()" style="width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:24px;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--font)">登录 / 注册</button>
+          </div>
         </div>
         <!-- 其他板块（灰色不可点） -->
         <div style="background:var(--bg-card);border-radius:16px;padding:4px 0;opacity:0.5">
@@ -871,6 +873,9 @@ function renderMyPage(){
     </div>`;
 }
 
+function showLoginForm(){
+  document.getElementById('loginFormArea').style.display='block';
+}
 async function userLogin(){
   const phone=document.getElementById('loginPhone').value.trim();
   if(!phone||phone.length!==11){flashMsg('请输入正确的手机号');return}
