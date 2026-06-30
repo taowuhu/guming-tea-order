@@ -1251,9 +1251,13 @@ async function checkout(){
     const hasPay=pay.alipay||pay.wechat;
     let payHtml='';
     if(hasPay){
-      payHtml='<div style="margin-top:16px;padding-top:12px;border-top:0.5px solid var(--border)"><div style="font-size:13px;color:var(--text3);margin-bottom:8px">💰 请选择付款方式</div>';
-      if(pay.alipay) payHtml+='<button onclick="window.open(\''+pay.alipay+'\');event.stopPropagation()" style="display:block;width:100%;margin:6px 0;padding:12px;background:#1677FF;color:#fff;border:none;border-radius:12px;font-weight:600;font-size:15px;cursor:pointer;font-family:var(--font)">💙 支付宝付款</button>';
-      if(pay.wechat) payHtml+='<button onclick="window.open(\''+pay.wechat+'\');event.stopPropagation()" style="display:block;width:100%;margin:6px 0;padding:12px;background:#07C160;color:#fff;border:none;border-radius:12px;font-weight:600;font-size:15px;cursor:pointer;font-family:var(--font)">💚 微信付款</button>';
+      payHtml='<div style="margin-top:16px;padding-top:12px;border-top:0.5px solid var(--border)"><div style="font-size:13px;color:var(--text3);margin-bottom:8px">💰 请扫码付款</div>';
+      if(pay.alipay) payHtml+=/\.(png|jpg|jpeg|gif|webp)(\?|$)/i.test(pay.alipay)
+        ?'<div style="text-align:center;margin:8px 0"><img src="'+pay.alipay+'" style="max-width:200px;border-radius:8px" alt="支付宝收款码"><br><span style="font-size:11px;color:var(--text3)">💙 支付宝扫码</span></div>'
+        :'<button onclick="window.open(\''+pay.alipay+'\');event.stopPropagation()" style="display:block;width:100%;margin:6px 0;padding:12px;background:#1677FF;color:#fff;border:none;border-radius:12px;font-weight:600;font-size:15px;cursor:pointer;font-family:var(--font)">💙 支付宝付款</button>';
+      if(pay.wechat) payHtml+=/\.(png|jpg|jpeg|gif|webp)(\?|$)/i.test(pay.wechat)
+        ?'<div style="text-align:center;margin:8px 0"><img src="'+pay.wechat+'" style="max-width:200px;border-radius:8px" alt="微信收款码"><br><span style="font-size:11px;color:var(--text3)">💚 微信扫码</span></div>'
+        :'<button onclick="window.open(\''+pay.wechat+'\');event.stopPropagation()" style="display:block;width:100%;margin:6px 0;padding:12px;background:#07C160;color:#fff;border:none;border-radius:12px;font-weight:600;font-size:15px;cursor:pointer;font-family:var(--font)">💚 微信付款</button>';
       payHtml+='</div>';
     }else{
       payHtml='<div style="margin-top:12px;font-size:12px;color:var(--text3)">订单已提交，商家将尽快处理</div>';
