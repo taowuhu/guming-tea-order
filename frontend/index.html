@@ -25,12 +25,12 @@ body{
   min-height:100vh;min-height:100dvh;-webkit-font-smoothing:antialiased;
 }
 .app{
-  width:100%;max-width:420px;min-height:100vh;min-height:100dvh;
-  background:var(--bg);position:relative;overflow-x:hidden;
+  width:100%;max-width:420px;height:100dvh;
+  background:var(--bg);position:relative;overflow:hidden;
   display:flex;flex-direction:column;
   box-shadow:0 12px 40px rgba(44,36,22,0.10);
 }
-html,body{margin:0;padding:0;width:100%;height:100%;display:flex;justify-content:center}
+html,body{margin:0;padding:0;width:100%;height:100%;display:flex;justify-content:center;overflow:hidden}
 body{background:#e8e4dd}
 .header{
   position:sticky;top:0;z-index:100;height:var(--header-h);padding:0 16px;
@@ -38,17 +38,18 @@ body{background:#e8e4dd}
   backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);
   background:rgba(245,240,235,0.78);border-bottom:0.5px solid var(--border);
 }
-.header-brand{font-size:18px;font-weight:700;letter-spacing:-0.3px;cursor:pointer;user-select:none}
-.header-brand span{color:var(--accent)}
-.header-right{display:flex;align-items:center;gap:8px}
-.header-loc{font-size:13px;color:var(--text2);padding:5px 12px;border-radius:20px;background:rgba(255,255,255,0.5)}
-.header-admin{
-  width:32px;height:32px;border-radius:50%;border:none;background:rgba(255,255,255,0.6);
-  font-size:16px;cursor:pointer;display:none;align-items:center;justify-content:center;
-  transition:all 0.2s;
-}
-.header-admin.active{background:var(--accent);color:#fff}
+.header-brand{font-size:18px;font-weight:700;color:var(--text);cursor:pointer}
+.header-brand span{color:var(--accent-dark)}
+.header-loc{font-size:11px;color:var(--text3)}
+.header-admin{background:none;border:none;font-size:18px;cursor:pointer;padding:0 4px}
 .header-admin.show{display:flex}
+
+/* Tab content */  
+.tab-content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:20px}
+
+/* My page */
+.my-page{padding:10px 14px 90px}
+.my-header{text-align:center;padding:20px 0}
 
 .cat-tabs-wrap{
   position:sticky;top:var(--header-h);z-index:99;
@@ -414,8 +415,6 @@ body{background:#e8e4dd}
 .fav-btn:active{transform:scale(1.15)}
 
 /* My page */
-.tab-content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
-
 .my-page{padding:10px 14px 90px}
 .my-header{text-align:center;padding:20px 0}
 .my-avatar{width:64px;height:64px;border-radius:50%;background:var(--accent-soft);margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:28px}
