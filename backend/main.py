@@ -681,8 +681,10 @@ def delete_address(addr_id: int, uid=Depends(get_current_user)):
 @app.get("/api/user/orders")
 def user_orders(status: str = "", uid=Depends(get_current_user)):
     with get_db() as db:
-        q = "SELECT * FROM orders WHERE customer_phone=(SELECT phone FROM users WHERE id=?)"
-        p = [uid]
+        u = db.execute("SELECT phone FROM users WHERE id=?",(uid,)).fetchone()
+        phone = u["phone"] if u else ""
+        q = "SELECT * FROM orders WHERE (customer_phone=? OR customer_phone='')"
+        p = [phone]
         if status:
             q += " AND status=?"
             p.append(status)
