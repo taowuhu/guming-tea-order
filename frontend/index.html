@@ -685,7 +685,7 @@ function updateAddressDisplay(){
   if(sa) sa.textContent='📍 '+siteConfig.address;
   const sp=document.getElementById('shopPhone');
   if(sp){
-    if(siteConfig.phone) sp.innerHTML='📞 <a class="contact-phone" href="tel:'+siteConfig.phone+'" style="text-decoration:none;font-weight:600" onclick="this.textContent=\''+siteConfig.phone+'\'">点击查看号码</a>';
+    if(siteConfig.phone) sp.innerHTML='📞 <a class="contact-phone" href="javascript:void(0)" onclick="this.textContent=\''+siteConfig.phone+'\';this.href=\'tel:'+siteConfig.phone+'\'" style="text-decoration:none;font-weight:600">电话</a>';
     else sp.innerHTML='📞 <span class="contact-phone" style="cursor:default">电话</span>';
   }
 }
