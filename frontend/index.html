@@ -888,7 +888,10 @@ function renderMyPage(){
       <div style="background:var(--bg-card);border-radius:16px;padding:14px;margin-bottom:12px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
           <span style="font-size:14px;font-weight:600">📋 我的订单</span>
-          <span style="font-size:12px;color:var(--accent-dark);cursor:pointer" onclick="showMyOrders()">查看全部 ›</span>
+          <div>
+            <span style="font-size:11px;color:var(--accent-dark);cursor:pointer;margin-right:12px" onclick="showMyOrders()">查看全部 ›</span>
+            <span style="font-size:11px;color:var(--text3);cursor:pointer" onclick="showMyOrders()">🔄</span>
+          </div>
         </div>
         <div style="display:flex;gap:4px;font-size:11px">
           ${[['pending','⏳ 待付款'],['paid','💰 待发货'],['shipped','📦 待收货'],['completed','✅ 待使用'],['cancelled','❌ 售后']].map(([k,v])=>`<div style="flex:1;text-align:center;padding:8px 2px;cursor:pointer;border-radius:8px" onclick="showMyOrders('${k}')">${v}</div>`).join('')}
