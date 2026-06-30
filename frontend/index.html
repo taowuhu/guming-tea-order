@@ -671,8 +671,15 @@ async function loadSiteConfig(){
   updateAddressDisplay();
 }
 function updateAddressDisplay(){
-  const hl=document.getElementById('headerLoc');if(hl)hl.textContent='📍 '+siteConfig.address;
-  const sa=document.getElementById('shopAddr');if(sa)sa.textContent='📍 '+siteConfig.address;
+  const hl=document.getElementById('headerLoc');
+  if(hl) hl.textContent='📍 景德镇';
+  const sa=document.getElementById('shopAddr');
+  if(sa) sa.textContent='📍 '+siteConfig.address;
+  const sp=document.getElementById('shopPhone');
+  if(sp){
+    if(siteConfig.phone) sp.innerHTML='📞 <a class="contact-phone" href="tel:'+siteConfig.phone+'" style="text-decoration:none;font-weight:600">'+siteConfig.phone+'</a>';
+    else sp.innerHTML='📞 <span class="contact-phone" style="cursor:default">电话</span>';
+  }
 }
 
 function renderShop(){
@@ -687,7 +694,7 @@ function renderShop(){
     </div>
     <div class="contact-bar">
       <span class="addr" id="shopAddr"></span>
-      ${siteConfig.phone?`<a class="contact-phone" href="tel:${siteConfig.phone}">📞 ${siteConfig.phone}</a>`:'<span class="contact-phone" style="cursor:default">📞 电话</span>'}
+      <span id="shopPhone">📞 电话</span>
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;margin:0 14px 8px;background:var(--bg-card);border-radius:12px;cursor:pointer" onclick="switchTab(1)">
       <span style="font-size:14px;font-weight:600">🔥 好物推荐</span>
@@ -704,6 +711,7 @@ function renderShop(){
     </div>`;
   renderShopGrid('');
   setTimeout(updateCartUI,200);
+  setTimeout(updateAddressDisplay,300);
 }
 
 function renderShopGrid(query){
