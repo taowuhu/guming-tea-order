@@ -1326,7 +1326,10 @@ async function doLogin(){
   }catch(e){document.getElementById('loginError').textContent='网络错误';document.getElementById('loginError').style.display='block'}
 }
 
+let isToggling=false;
 function toggleAdmin(){
+  if(isToggling)return;
+  isToggling=true;
   const toggle=document.getElementById('adminToggle');
   if(isAdmin){
     toggle.classList.add('active');
@@ -1335,6 +1338,7 @@ function toggleAdmin(){
     toggle.classList.remove('active');
     switchTab(currentTab);
   }
+  setTimeout(()=>isToggling=false,500);
 }
 
 async function loadAdminPanel(){
