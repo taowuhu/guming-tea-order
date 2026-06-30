@@ -1067,9 +1067,14 @@ function setupModalListeners(){
   document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeModal()});
   document.getElementById('modalSheet').addEventListener('click',function(e){e.stopPropagation()});
 }
-function openDetail(catId,itemId){
+async function openDetail(catId,itemId){
   const d=findDrink(catId,itemId);if(!d)return;
   currentDrink={catId,itemId,...d};
+  // Load product-specific options
+  try{
+    const r=await fetch('/api/options?item_id='+itemId);
+    if(r.ok){const opts=await r.json();optionsData=opts}
+  }catch(e){}
   currentSel={temperature:optionsData.temperature[0]||'中号',sweetness:optionsData.sweetness[0]||'白釉',toppings:[],qty:1};
   renderModal();
   document.getElementById('modalOverlay').classList.remove('hidden');document.body.style.overflow='hidden';
@@ -1400,6 +1405,7 @@ function renderAdminPanel(){
       <div class="admin-actions">
         <button class="primary" onclick="saveItem('${it.id}')">💾 保存</button>
         <button onclick="openUpload('${it.id}')">📷 换图</button>
+        <button onclick="showItemOptions('${it.id}')">⚙️ 选项</button>
         <button class="${it.is_available?'danger':''}" onclick="toggleAvailability('${it.id}')">${it.is_available?'👁 下架':'👁‍🗨 上架'}</button>
         <button class="danger" onclick="deleteItem('${it.id}')" style="background:#e25c3b">🗑 删除</button>
       </div>
@@ -1607,6 +1613,61 @@ async function setOrderStatus(orderId,status){
     await adminApi(`/api/admin/orders/${orderId}/status`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
     flashMsg('✅ 状态已更新');
   }catch(e){flashMsg('❌ '+e.message)}
+}
+
+// Per-product option management
+async function showItemOptions(itemId){
+  const el=document.getElementById('tabContent');
+  el.innerHTML='<div class="loading">加载中...</div>';
+  try{
+    const r=await adminApi('/api/admin/options?product_id='+itemId);
+    const opts=r.options;
+    const item=adminItems.find(i=>i.id===itemId);
+    const labels={temperature:'📏 尺寸',sweetness:'🎨 釉色',toppings:'🔧 工艺'};
+    el.innerHTML=`
+      <div class="my-page">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <button class="btn-text" onclick="renderAdminPanel()">← 返回</button>
+          <span style="font-size:14px;font-weight:600">⚙️ ${item?.name||itemId} 的选项</span>
+          <button class="btn-text" onclick="showAddOptForItem('${itemId}')" style="margin-left:auto;color:var(--accent-dark)">＋ 新增</button>
+        </div>
+        ${['temperature','sweetness','toppings'].map(g=>{
+          const items=opts.filter(o=>o.group_key===g);
+          return `<div style="background:var(--bg-card);border-radius:12px;padding:10px 12px;margin-bottom:8px">
+            <b style="font-size:13px">${labels[g]}</b>
+            ${items.map(o=>`<div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;font-size:13px">
+              <span>${o.name}${o.price?' +¥'+o.price:''}</span>
+              <span>
+                <button class="btn-text" onclick="editOptForItem(${o.id},'${o.name}',${o.price},'${g}','${itemId}')" style="font-size:11px">✏️</button>
+                <button class="btn-text" onclick="delOptForItem(${o.id},'${itemId}')" style="font-size:11px;color:#e25c3b">×</button>
+              </span>
+            </div>`).join('')||'<div style="color:var(--text3);font-size:12px;margin-top:4px">（继承全局选项）</div>'}
+          </div>`;
+        }).join('')}
+        <button class="btn-text" onclick="renderAdminPanel()" style="width:100%;margin-top:8px">← 返回</button>
+      </div>`;
+  }catch(e){el.innerHTML=`<div class="loading">⚠️ ${e.message}</div>`}
+}
+
+function showAddOptForItem(itemId){
+  const g=prompt('选项类型:\\n1=尺寸 2=釉色 3=工艺','1');
+  const keys={1:'temperature',2:'sweetness',3:'toppings'};const gk=keys[parseInt(g)]||'temperature';
+  const name=prompt('选项名称');if(!name)return;
+  let price=0;if(gk==='toppings')price=parseFloat(prompt('价格','0'))||0;
+  (async()=>{
+    try{await adminApi('/api/admin/options?group_key='+gk,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,price,product_id:itemId})});showItemOptions(itemId)}catch(e){flashMsg('❌ '+e.message)}
+  })();
+}
+function editOptForItem(id,oldName,oldPrice,gk,itemId){
+  const name=prompt('名称',oldName);if(!name)return;
+  let price=oldPrice;if(gk==='toppings'){const p=prompt('价格',oldPrice);if(p===null)return;price=parseFloat(p)||0}
+  (async()=>{
+    try{await adminApi('/api/admin/options/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,price})});showItemOptions(itemId)}catch(e){flashMsg('❌ '+e.message)}
+  })();
+}
+async function delOptForItem(id,itemId){
+  if(!confirm('删除？'))return;
+  try{await adminApi('/api/admin/options/'+id,{method:'DELETE'});showItemOptions(itemId)}catch(e){flashMsg('❌ '+e.message)}
 }
 
 // Flash message

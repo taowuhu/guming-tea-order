@@ -89,7 +89,8 @@ def init_db():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 group_key TEXT NOT NULL,
                 name TEXT NOT NULL,
-                price REAL DEFAULT 0
+                price REAL DEFAULT 0,
+                product_id TEXT DEFAULT ''
             );
             CREATE TABLE IF NOT EXISTS users (
                 id TEXT PRIMARY KEY, phone TEXT UNIQUE NOT NULL,
@@ -115,6 +116,10 @@ def init_db():
         cols = [r[1] for r in db.execute("PRAGMA table_info(menu_items)").fetchall()]
         if "image_url" not in cols:
             db.execute("ALTER TABLE menu_items ADD COLUMN image_url TEXT DEFAULT ''")
+        # Add product_id to option_items
+        opt_cols = [r[1] for r in db.execute("PRAGMA table_info(option_items)").fetchall()]
+        if "product_id" not in opt_cols:
+            db.execute("ALTER TABLE option_items ADD COLUMN product_id TEXT DEFAULT ''")
 
 
 def seed_menu():
@@ -231,9 +236,12 @@ def seed_options():
 
 
 @app.get("/api/options")
-def get_options():
+def get_options(item_id: str = None):
     with get_db() as db:
-        rows = db.execute("SELECT group_key,name,price FROM option_items ORDER BY id").fetchall()
+        rows = db.execute(
+            "SELECT group_key,name,price FROM option_items WHERE product_id=? OR (product_id='' AND NOT EXISTS (SELECT 1 FROM option_items o2 WHERE o2.group_key=option_items.group_key AND o2.product_id=?)) ORDER BY id",
+            (item_id or '', item_id or '')
+        ).fetchall() if item_id else db.execute("SELECT group_key,name,price FROM option_items WHERE product_id='' ORDER BY id").fetchall()
     result = {"temperature":[],"sweetness":[],"toppings":[]}
     for r in rows:
         if r["group_key"] == "toppings":
@@ -430,12 +438,19 @@ def create_category(req: CategoryUpdate, _=Depends(check_admin)):
 class OptionUpdate(BaseModel):
     name: str
     price: float = 0
+    product_id: str = ""
 
 @app.get("/api/admin/options")
-def admin_get_options(_=Depends(check_admin)):
+def admin_get_options(product_id: str = "", _=Depends(check_admin)):
     with get_db() as db:
-        rows = db.execute("SELECT id,group_key,name,price FROM option_items ORDER BY group_key,id").fetchall()
-    return {"options": [{"id":r["id"],"group_key":r["group_key"],"name":r["name"],"price":r["price"]} for r in rows]}
+        q = "SELECT id,group_key,name,price,product_id FROM option_items"
+        p = []
+        if product_id:
+            q += " WHERE product_id=?"
+            p.append(product_id)
+        q += " ORDER BY group_key,id"
+        rows = db.execute(q, p).fetchall()
+    return {"options": [{"id":r["id"],"group_key":r["group_key"],"name":r["name"],"price":r["price"],"product_id":r["product_id"]} for r in rows]}
 
 @app.put("/api/admin/options/{opt_id}")
 def update_option(opt_id: int, req: OptionUpdate, _=Depends(check_admin)):
@@ -452,7 +467,7 @@ def delete_option(opt_id: int, _=Depends(check_admin)):
 @app.post("/api/admin/options")
 def create_option(req: OptionUpdate, group_key: str = "temperature", _=Depends(check_admin)):
     with get_db() as db:
-        db.execute("INSERT INTO option_items (group_key,name,price) VALUES (?,?,?)",(group_key,req.name,req.price))
+        db.execute("INSERT INTO option_items (group_key,name,price,product_id) VALUES (?,?,?,?)",(group_key,req.name,req.price,req.product_id))
     return {"ok": True}
 
 
