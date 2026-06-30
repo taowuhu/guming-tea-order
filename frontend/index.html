@@ -366,10 +366,11 @@ body{
 
 /* Contact bar */
 .contact-bar{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:6px 14px;margin:0 14px 8px;
-  background:rgba(255,255,255,0.6);border-radius:12px;font-size:13px;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:10px 14px;margin:0 14px 8px;
+  background:rgba(255,255,255,0.6);border-radius:12px;font-size:12px;line-height:1.5;
 }
+.contact-bar .addr{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2)}
 .contact-phone{
   display:flex;align-items:center;gap:4px;color:var(--accent-dark);
   text-decoration:none;font-weight:600;
@@ -664,8 +665,8 @@ function renderShop(){
       ${siteConfig.banner?`<img src="${siteConfig.banner}" alt="">`:'🏺 墨禾陶瓷 · 匠心手作'}
     </div>
     <div class="contact-bar">
-      <span>📍 景德镇市珠山区新厂东路169号(人杰公司院内第1栋)3-2号</span>
-      ${siteConfig.phone?`<a class="contact-phone" href="tel:${siteConfig.phone}">📞 ${siteConfig.phone}</a>`:'<span class="contact-phone" style="cursor:default">📞 电话咨询</span>'}
+      <span class="addr">📍 景德镇市珠山区新厂东路169号(人杰公司院内第1栋)3-2号</span>
+      ${siteConfig.phone?`<a class="contact-phone" href="tel:${siteConfig.phone}">📞 ${siteConfig.phone}</a>`:'<span class="contact-phone" style="cursor:default">📞 电话</span>'}
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;margin:0 14px 8px;background:var(--bg-card);border-radius:12px;cursor:pointer" onclick="switchTab(1)">
       <span style="font-size:14px;font-weight:600">🔥 好物推荐</span>
