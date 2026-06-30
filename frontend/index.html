@@ -644,10 +644,14 @@ function switchTab(n){
   currentTab=n;
   document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===n));
   if(isAdmin){toggleAdmin();return}
-  if(n===0) renderShop();
+  if(n===0){renderShop();setTimeout(updateCartUI,300)}
   else if(n===1) renderCategories();
   else if(n===2) renderCartPage();
   else if(n===3) renderMyPage();
+  document.getElementById('tabContent').scrollTop=0;
+}
+async function refreshSite(){
+  await loadSiteConfig();updateAddressDisplay();
 }
 
 // ══════════════════════════════════════════════
@@ -733,7 +737,7 @@ function renderCategories(){
   el.innerHTML=`
     <div style="display:flex;height:calc(100vh - 110px)">
       <div id="catSidebar" style="width:90px;background:#f8f5f0;overflow-y:auto;flex-shrink:0;padding:4px 0">
-        ${menuData.map(c=>`<div class="cat-side-item" data-cat="${c.id}" onclick="selectCategory('${c.id}')" style="padding:12px 8px;text-align:center;font-size:12px;color:var(--text2);cursor:pointer;border-right:3px solid transparent">${c.name.replace(/[^\u4e00-\u9fa5]/g,'')}<br><span style="font-size:10px;color:var(--text3)">${c.items.length}件</span></div>`).join('')}
+        ${menuData.map(c=>`<div class="cat-side-item" data-cat="${c.id}" onclick="selectCategory('${c.id}')" style="padding:12px 8px;text-align:center;font-size:12px;color:var(--text2);cursor:pointer;border-right:3px solid transparent">${c.name.replace(/[🔥🍽️🍵🏺🎨 ]/g,'').trim()||c.name}<br><span style="font-size:10px;color:var(--text3)">${c.items.length}件</span></div>`).join('')}
       </div>
       <div style="flex:1;overflow-y:auto;padding:0 10px 20px">
         <div style="display:flex;gap:6px;padding:10px 0;position:sticky;top:0;background:var(--bg);z-index:2">
@@ -894,13 +898,17 @@ async function userLogin(){
   try{
     const r=await api('/api/user/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone})});
     currentUser=r.user;userToken=r.token;localStorage.setItem('mohe_user',JSON.stringify({phone:r.user.phone,token:r.token}));
+    await loadFavorites();
     renderMyPage();flashMsg('✅ 登录成功');
   }catch(e){flashMsg('❌ '+e.message)}
 }
-function userLogout(){currentUser=null;userToken='';localStorage.removeItem('mohe_user');renderMyPage()}
+function userLogout(){currentUser=null;userToken='';favorites=[];localStorage.removeItem('mohe_user');renderMyPage()}
 function loadUserSession(){
   const saved=localStorage.getItem('mohe_user');
-  if(saved){try{const d=JSON.parse(saved);currentUser={phone:d.phone,name:''};userToken=d.token}catch(e){}}
+  if(saved){try{const d=JSON.parse(saved);currentUser={phone:d.phone,name:''};userToken=d.token;loadFavorites()}catch(e){}}
+}
+async function loadFavorites(){
+  try{if(!userToken)return;const r=await fetch('/api/user/favorites',{headers:{'Authorization':'Bearer '+userToken}});if(r.ok)favorites=await r.json()}catch(e){}
 }
 async function showMyOrders(filterStatus){
   const el=document.getElementById('tabContent');
@@ -1246,6 +1254,7 @@ function showToast(icon,title,desc,extra){
   t.innerHTML=`<div class="toast-card"><div class="toast-icon">${icon}</div><div class="toast-title">${title}</div><div class="toast-desc">${desc}</div><div style="font-size:12px;color:var(--text3)">${extra||''}</div><button class="btn-checkout toast-close" style="margin-top:16px">好的</button></div>`;
   document.body.appendChild(t);document.body.style.overflow='hidden';
   t.querySelector('.toast-close').addEventListener('click',()=>{t.remove();document.body.style.overflow=''});
+  setTimeout(()=>{if(t.parentNode){t.remove();document.body.style.overflow=''}},5000);
 }
 
 // ══════════════════════════════════════════════
@@ -1343,6 +1352,7 @@ function savePayCfg(){
       await adminApi('/api/admin/config',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'banner_url',value:banner})});
       await adminApi('/api/admin/config',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'contact_address',value:addr})});
       flashMsg('✅ 配置已保存');
+      refreshSite();
     }catch(e){flashMsg('❌ '+e.message)}
   })();
 }
