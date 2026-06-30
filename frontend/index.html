@@ -1246,7 +1246,12 @@ function renderCartDrawer(){
 }
 
 async function checkout(){
-  if(!cart.length)return;const tot=cartTotal(),cnt=cartCount();
+  if(!cart.length)return;
+  if(!currentUser){
+    needLogin();
+    flashMsg('请先登录再下单，方便查看订单进度');
+    return;
+  }
   // Step 1: Show payment first
   const pay=await api('/api/payment');
   const hasPay=pay.alipay||pay.wechat;
