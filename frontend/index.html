@@ -368,13 +368,17 @@ body{
 .contact-bar{
   display:flex;align-items:center;justify-content:space-between;gap:8px;
   padding:10px 14px;margin:0 14px 8px;
-  background:rgba(255,255,255,0.6);border-radius:12px;font-size:12px;line-height:1.5;
+  background:rgba(255,255,255,0.6);backdrop-filter:blur(8px);
+  border-radius:12px;font-size:12px;line-height:1.5;
 }
 .contact-bar .addr{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2)}
 .contact-phone{
-  display:flex;align-items:center;gap:4px;color:var(--accent-dark);
-  text-decoration:none;font-weight:600;
+  display:inline-flex;align-items:center;gap:4px;color:var(--accent-dark);
+  text-decoration:none;font-weight:600;font-size:13px;
+  background:rgba(161,128,84,0.1);padding:6px 12px;border-radius:20px;
+  white-space:nowrap;transition:all 0.2s;
 }
+.contact-phone:hover{background:rgba(161,128,84,0.2)}
 
 /* Product grid (2 columns) */
 .product-grid{
