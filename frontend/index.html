@@ -836,11 +836,11 @@ function renderMyPage(){
             <button onclick="event.stopPropagation();userLogin()" style="width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:24px;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--font)">登录 / 注册</button>
           </div>
         </div>
-        <!-- 其他板块（灰色不可点） -->
-        <div style="background:var(--bg-card);border-radius:16px;padding:4px 0;opacity:0.5">
-          <div class="my-menu-item" style="border-bottom:0.5px solid var(--border)">📋 我的订单 <span>›</span></div>
-          <div class="my-menu-item" style="border-bottom:0.5px solid var(--border)">❤️ 我的收藏 <span>›</span></div>
-          <div class="my-menu-item">📍 收货地址 <span>›</span></div>
+        <!-- 其他板块 -->
+        <div style="background:var(--bg-card);border-radius:16px;padding:4px 0">
+          <div class="my-menu-item" onclick="needLogin()" style="border-bottom:0.5px solid var(--border)">📋 我的订单 <span>›</span></div>
+          <div class="my-menu-item" onclick="needLogin()" style="border-bottom:0.5px solid var(--border)">❤️ 我的收藏 <span>›</span></div>
+          <div class="my-menu-item" onclick="needLogin()">📍 收货地址 <span>›</span></div>
         </div>
       </div>`;
     return;
@@ -875,6 +875,10 @@ function renderMyPage(){
 
 function showLoginForm(){
   document.getElementById('loginFormArea').style.display='block';
+}
+function needLogin(){
+  showLoginForm();
+  flashMsg('请先登录');
 }
 async function userLogin(){
   const phone=document.getElementById('loginPhone').value.trim();
