@@ -956,7 +956,7 @@ async function showMyOrders(filterStatus){
             <div style="font-size:12px;color:var(--text3)">${o.created_at}</div>
             ${(o.items||[]).map(i=>`<div style="font-size:13px;padding:2px 0">${i.name} ×${i.qty} ¥${i.price}</div>`).join('')}
             <div style="text-align:right;font-weight:700">合计 ¥${o.total_price}</div>
-            ${o.status==='pending'?`<div style="display:flex;gap:8px;margin-top:8px"><button onclick="goPay('${o.order_no}','${o.total_price}')" style="flex:1;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-family:var(--font)">💳 去付款</button><button onclick="cancelOrder('${o.order_no}')" style="padding:10px 16px;background:none;border:0.5px solid var(--border);border-radius:8px;color:var(--text3);cursor:pointer;font-family:var(--font);font-size:12px">🗑 取消</button></div>`:''}
+            ${o.status==='pending'?`<div style="display:flex;gap:8px;margin-top:8px"><button onclick="goPay('${o.order_no}','${o.total_price}')" style="flex:1;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-family:var(--font)">💳 去付款</button><button onclick="cancelOrder('${o.order_no}')" style="padding:10px 16px;background:none;border:0.5px solid var(--border);border-radius:8px;color:var(--text3);cursor:pointer;font-family:var(--font);font-size:12px">🗑 取消</button></div>`:o.status==='shipped'?`<button onclick="confirmReceived('${o.order_no}')" style="margin-top:8px;width:100%;padding:10px;background:#07C160;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-family:var(--font)">📦 确认收货</button>`:''}
           </div>
         `).join(''):'<div class="cart-page-empty">暂无订单</div>'}
         <button class="btn-text" onclick="renderMyPage()" style="width:100%;margin-top:8px">← 返回</button>
@@ -1792,6 +1792,15 @@ async function cancelOrder(orderNo){
   try{
     await fetch('/api/user/orders/'+encodeURIComponent(orderNo),{method:'DELETE',headers:{'Authorization':'Bearer '+userToken}});
     flashMsg('🗑 订单已取消');
+    showMyOrders('');
+  }catch(e){flashMsg('❌ '+e.message)}
+}
+
+async function confirmReceived(orderNo){
+  if(!confirm('确认已收到货？'))return;
+  try{
+    await fetch('/api/user/orders/'+encodeURIComponent(orderNo)+'/confirm',{method:'POST',headers:{'Authorization':'Bearer '+userToken}});
+    flashMsg('✅ 已确认收货');
     showMyOrders('');
   }catch(e){flashMsg('❌ '+e.message)}
 }
