@@ -75,7 +75,8 @@ def init_db():
                 id TEXT PRIMARY KEY, order_no TEXT UNIQUE,
                 status TEXT DEFAULT 'pending', total_price REAL,
                 created_at REAL, customer_name TEXT DEFAULT '',
-                customer_phone TEXT DEFAULT '', customer_address TEXT DEFAULT ''
+                customer_phone TEXT DEFAULT '', customer_address TEXT DEFAULT '',
+                issue TEXT DEFAULT ''
             );
             CREATE TABLE IF NOT EXISTS order_items (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -126,6 +127,9 @@ def init_db():
         opt_cols = [r[1] for r in db.execute("PRAGMA table_info(option_items)").fetchall()]
         if "product_id" not in opt_cols:
             db.execute("ALTER TABLE option_items ADD COLUMN product_id TEXT DEFAULT ''")
+        order_cols = [r[1] for r in db.execute("PRAGMA table_info(orders)").fetchall()]
+        if "issue" not in order_cols:
+            db.execute("ALTER TABLE orders ADD COLUMN issue TEXT DEFAULT ''")
 
 
 def seed_menu():
@@ -732,6 +736,16 @@ def user_confirm_order(order_no: str, uid=Depends(get_current_user)):
         if not o: raise HTTPException(404,"订单不存在")
         if o["status"] != "shipped": raise HTTPException(400,"只能确认待收货订单")
         db.execute("UPDATE orders SET status='completed' WHERE id=?",(o["id"],))
+    return {"ok": True}
+
+@app.post("/api/user/orders/{order_no}/issue")
+def user_submit_issue(order_no: str, uid=Depends(get_current_user), issue: str = ""):
+    with get_db() as db:
+        u = db.execute("SELECT phone FROM users WHERE id=?",(uid,)).fetchone()
+        if not u: raise HTTPException(404,"用户不存在")
+        o = db.execute("SELECT * FROM orders WHERE (order_no=? AND customer_phone=?) OR (order_no=? AND customer_phone='')",(order_no,u["phone"],order_no)).fetchone()
+        if not o: raise HTTPException(404,"订单不存在")
+        db.execute("UPDATE orders SET issue=? WHERE id=?",(issue, o["id"]))
     return {"ok": True}
 
 
