@@ -1255,12 +1255,34 @@ async function checkout(){
     if(pay.wechat) payHtml+=/\.(png|jpg|jpeg|gif|webp)(\?|$)/i.test(pay.wechat)
       ?'<div style="text-align:center;margin:8px 0"><img src="'+pay.wechat+'" style="max-width:200px;border-radius:8px" alt="微信收款码"><br><span style="font-size:11px;color:var(--text3)">💚 微信扫码付款</span></div>'
       :'<button onclick="window.open(\''+pay.wechat+'\');event.stopPropagation()" style="display:block;width:100%;margin:6px 0;padding:12px;background:#07C160;color:#fff;border:none;border-radius:12px;font-weight:600;font-size:15px;cursor:pointer;font-family:var(--font)">💚 微信付款</button>';
-    payHtml+='</div><button class="btn-checkout" style="margin-top:16px;width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--font)" onclick="this.closest(\'.order-toast\')?.remove();document.body.style.overflow=\'\';confirmOrder()">✅ 我已完成付款，确认订单</button>';
+    payHtml+='</div><button class="btn-checkout" style="margin-top:16px;width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--font)" onclick="confirmOrderFromPay(this)">✅ 我已完成付款，确认订单</button>';
     showToast('💳','请先付款',payHtml,'');
   }else{
     // No payment configured, just confirm directly
     showToast('📋','确认下单？',orderSummary+'<div style="margin-top:8px">'+cnt+'件商品 · <strong>¥'+tot+'</strong></div>',
       '<button class="btn-checkout" style="margin-top:12px;width:100%" onclick="this.closest(\'.order-toast\')?.remove();document.body.style.overflow=\'\';confirmOrder()">✅ 确认提交</button>');
+  }
+}
+
+async function confirmOrderFromPay(btn){
+  const toast=btn.closest('.order-toast');
+  // Replace content with loading
+  const card=toast.querySelector('.toast-card');
+  card.innerHTML='<div class="toast-icon">⏳</div><div class="toast-title">正在确认订单...</div>';
+  try{
+    const tot=cartTotal(),cnt=cartCount();
+    const items=cart.map(it=>({menu_item_id:it.drinkId,item_name:it.name,base_price:it.basePrice,quantity:it.qty,temperature:it.temperature,sweetness:it.sweetness,toppings:it.toppings}));
+    const headers={'Content-Type':'application/json'};if(userToken)headers['Authorization']='Bearer '+userToken;
+    const order=await api('/api/orders',{method:'POST',headers,body:JSON.stringify({items})});
+    cart=[];updateCartUI();renderCartDrawer();closeCartDrawer();
+    if(currentTab===2) renderCartPage();
+    // Transition to success
+    card.innerHTML='<div class="toast-icon">✅</div><div class="toast-title">下单成功！</div><div class="toast-desc">'+cnt+'件商品 · <strong>¥'+tot+'</strong></div><div style="font-size:12px;color:var(--text3)">下单号 <strong style="color:var(--accent-dark);font-size:16px">'+order.order_no+'</strong></div><button class="btn-checkout toast-close" style="margin-top:16px;background:#1a1a1a;color:#fff">好的</button></div>';
+    // Re-bind close
+    card.querySelector('.toast-close').addEventListener('click',()=>{toast.remove();document.body.style.overflow=''});
+  }catch(e){
+    card.innerHTML='<div class="toast-icon">❌</div><div class="toast-title">下单失败</div><div class="toast-desc">'+e.message+'</div><button class="btn-checkout toast-close" style="margin-top:16px">好的</button></div>';
+    card.querySelector('.toast-close').addEventListener('click',()=>{toast.remove();document.body.style.overflow=''});
   }
 }
 
