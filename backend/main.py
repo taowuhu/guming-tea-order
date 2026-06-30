@@ -308,7 +308,7 @@ def create_order(req: CreateOrder, authorization: str = Header(None)):
     total = sum((it.base_price + sum(tp.get(t,0) for t in it.toppings)) * it.quantity for it in req.items)
 
     with get_db() as db:
-        db.execute("INSERT INTO orders VALUES (?,?,?,?,?,?,?,?)", (oid, ono, "pending", round(total,2), time.time(), customer_name, customer_phone, req.customer_address))
+        db.execute("INSERT INTO orders VALUES (?,?,?,?,?,?,?,?,?)", (oid, ono, "pending", round(total,2), time.time(), customer_name, customer_phone, req.customer_address, ""))
         for it in req.items:
             db.execute(
                 "INSERT INTO order_items (order_id,menu_item_id,item_name,base_price,quantity,temperature,sweetness,toppings) VALUES (?,?,?,?,?,?,?,?)",
