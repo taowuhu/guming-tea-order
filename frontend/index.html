@@ -1753,11 +1753,15 @@ async function changePassword(){
 
 async function markAsPaid(orderNo){
   try{
-    await fetch('/api/user/orders/'+orderNo+'/pay',{method:'POST',headers:{'Authorization':'Bearer '+userToken}});
-    document.querySelector('.order-toast')?.remove();
-    document.body.style.overflow='';
-    showMyOrders('paid');
-    flashMsg('✅ 已标记为已付款');
+    const r=await fetch('/api/user/orders/'+orderNo+'/pay',{method:'POST',headers:{'Authorization':'Bearer '+userToken}});
+    if(r.status===401){userLogout();renderMyPage();flashMsg('登录已过期，请重新登录');return}
+    if(!r.ok){const e=await r.json();throw new Error(e.detail||'操作失败')}
+    // Close toast
+    const toast=document.querySelector('.order-toast');
+    if(toast){toast.remove();document.body.style.overflow=''}
+    // Refresh to show order moved to 待发货
+    showMyOrders('');
+    flashMsg('✅ 已标记为已付款，订单移至待发货');
   }catch(e){flashMsg('❌ '+e.message)}
 }
 
