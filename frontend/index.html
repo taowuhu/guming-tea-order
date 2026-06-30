@@ -1223,17 +1223,21 @@ async function checkout(){
     const items=cart.map(it=>({menu_item_id:it.drinkId,item_name:it.name,base_price:it.basePrice,quantity:it.qty,temperature:it.temperature,sweetness:it.sweetness,toppings:it.toppings}));
     const headers={'Content-Type':'application/json'};if(userToken)headers['Authorization']='Bearer '+userToken;
     const order=await api('/api/orders',{method:'POST',headers,body:JSON.stringify({items})});
+    const orderSummary=cart.map(it=>it.name+' ×'+it.qty).join('、');
     cart=[];updateCartUI();renderCartDrawer();closeCartDrawer();
     if(currentTab===2) renderCartPage();
     const pay=await api('/api/payment');
     const hasPay=pay.alipay||pay.wechat;
-    showToast('✅','下单成功！',`${cnt}件商品 · ¥${tot}`,
+    showToast('✅','下单成功！',
+      `<div style="text-align:left;font-size:13px;color:var(--text2);margin-top:4px;line-height:1.6">${orderSummary}</div>
+      <div style="margin-top:8px">${cnt}件商品 · <strong>¥${tot}</strong></div>`,
       `下单号 <strong style="color:var(--accent-dark);font-size:16px">${order.order_no}</strong>`+
-      (hasPay?`<div style="margin-top:12px">${
-        pay.alipay?`<a href="${pay.alipay}" target="_blank" rel="noopener" style="display:inline-block;margin:4px 6px;padding:8px 20px;background:#1677FF;color:#fff;border-radius:20px;text-decoration:none;font-weight:600">💙 支付宝付款</a>`:''
+      (hasPay?`<div style="margin-top:16px;padding-top:12px;border-top:0.5px solid var(--border)">
+        <div style="font-size:13px;color:var(--text3);margin-bottom:8px">💰 请选择付款方式</div>${
+        pay.alipay?`<a href="${pay.alipay}" target="_blank" rel="noopener" style="display:block;margin:6px 0;padding:12px;background:#1677FF;color:#fff;border-radius:12px;text-decoration:none;font-weight:600;font-size:15px;text-align:center">💙 支付宝付款</a>`:''
       }${
-        pay.wechat?`<a href="${pay.wechat}" target="_blank" rel="noopener" style="display:inline-block;margin:4px 6px;padding:8px 20px;background:#07C160;color:#fff;border-radius:20px;text-decoration:none;font-weight:600">💚 微信付款</a>`:''
-      }</div>`:''));
+        pay.wechat?`<a href="${pay.wechat}" target="_blank" rel="noopener" style="display:block;margin:6px 0;padding:12px;background:#07C160;color:#fff;border-radius:12px;text-decoration:none;font-weight:600;font-size:15px;text-align:center">💚 微信付款</a>`:''
+      }</div>`:'<div style="margin-top:12px;font-size:12px;color:var(--text3)">订单已提交，商家将尽快处理</div>'));
   }catch(e){alert('下单失败: '+e.message)}
 }
 
