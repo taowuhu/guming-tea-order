@@ -100,6 +100,12 @@ def init_db():
                 user_id TEXT, item_id TEXT,
                 PRIMARY KEY (user_id, item_id)
             );
+            CREATE TABLE IF NOT EXISTS user_sessions (
+                token TEXT PRIMARY KEY, user_id TEXT, created_at REAL
+            );
+            CREATE TABLE IF NOT EXISTS admin_sessions (
+                token TEXT PRIMARY KEY, created_at REAL
+            );
             CREATE TABLE IF NOT EXISTS user_addresses (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id TEXT, name TEXT, phone TEXT,
@@ -165,8 +171,13 @@ def check_admin(authorization=Header(None)):
         raise HTTPException(401, "请先登录管理后台")
     token = authorization.replace("Bearer ", "")
     if token not in _admin_sessions:
-        raise HTTPException(401, "Token无效")
-    if time.time() - _admin_sessions[token] > 86400:
+        with get_db() as db:
+            r = db.execute("SELECT created_at FROM admin_sessions WHERE token=?",(token,)).fetchone()
+            if r and time.time() - r["created_at"] < 86400*30:
+                _admin_sessions[token] = r["created_at"]
+            else:
+                raise HTTPException(401, "Token无效")
+    if time.time() - _admin_sessions[token] > 86400*30:
         del _admin_sessions[token]
         raise HTTPException(401, "Token已过期")
 
@@ -184,6 +195,8 @@ def admin_login(req: LoginReq):
         raise HTTPException(403, "密码错误")
     token = secrets.token_hex(32)
     _admin_sessions[token] = time.time()
+    with get_db() as db:
+        db.execute("INSERT OR REPLACE INTO admin_sessions (token,created_at) VALUES (?,?)",(token, time.time()))
     return {"token": token}
 
 class ChangePasswordReq(BaseModel):
@@ -561,20 +574,26 @@ def user_login(req: UserLoginReq):
             uid = u["id"]
     token = secrets.token_hex(32)
     _user_sessions[token] = (uid, time.time())
+    # Persist to DB
+    with get_db() as db:
+        db.execute("INSERT OR REPLACE INTO user_sessions (token,user_id,created_at) VALUES (?,?,?)",(token, uid, time.time()))
     return {"token": token, "user": {"id": uid, "phone": req.phone, "name": req.name or "用户" + req.phone[-4:]}}
 
 
 def get_current_user(authorization=Header(None)):
-    if not authorization:
-        raise HTTPException(401, "请先登录")
-    token = authorization.replace("Bearer ", "")
-    if token not in _user_sessions:
-        raise HTTPException(401, "登录已过期")
-    uid, ts = _user_sessions[token]
-    if time.time() - ts > 86400 * 7:
-        del _user_sessions[token]
-        raise HTTPException(401, "登录已过期")
-    return uid
+    if not authorization: raise HTTPException(401,"请先登录")
+    token = authorization.replace("Bearer ","")
+    # Check memory first
+    if token in _user_sessions:
+        uid, ts = _user_sessions[token]
+        if time.time() - ts < 86400*7: return uid
+    # Check DB (persistent sessions)
+    with get_db() as db:
+        r = db.execute("SELECT user_id,created_at FROM user_sessions WHERE token=?",(token,)).fetchone()
+        if r and time.time() - r["created_at"] < 86400*30:
+            _user_sessions[token] = (r["user_id"], r["created_at"])
+            return r["user_id"]
+    raise HTTPException(401,"登录已过期")
 
 
 @app.get("/api/user/info")
