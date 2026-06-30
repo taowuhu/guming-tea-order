@@ -1434,6 +1434,7 @@ function renderAdminPanel(){
     `<div class="cat-row"><span style="width:60px;font-size:13px">📞 电话</span><input id="cfgPhone" placeholder="如 13800000000" class="cat-name-input" style="font-size:12px"> <button class="btn-text" onclick="savePayCfg()" style="color:var(--accent-dark)">💾</button></div>`+
     `<div class="cat-row"><span style="width:60px;font-size:13px">💙 支付宝</span><input id="cfgAlipay" placeholder="付款链接" class="cat-name-input" style="font-size:12px"> <button class="btn-text" onclick="uploadPayQR('cfgAlipay')" title="上传收款码">📷</button> <button class="btn-text" onclick="savePayCfg()" style="color:var(--accent-dark)">💾</button></div>`+
     `<div class="cat-row"><span style="width:60px;font-size:13px">💚 微信</span><input id="cfgWechat" placeholder="付款链接" class="cat-name-input" style="font-size:12px"> <button class="btn-text" onclick="uploadPayQR('cfgWechat')" title="上传收款码">📷</button> <button class="btn-text" onclick="savePayCfg()" style="color:var(--accent-dark)">💾</button></div>`+
+    `<div class="cat-row"><span style="width:60px;font-size:13px">🔐 密码</span><input id="cfgOldPwd" placeholder="旧密码" class="cat-name-input" style="font-size:12px;width:70px"><input id="cfgNewPwd" placeholder="新密码" class="cat-name-input" style="font-size:12px;width:70px"> <button class="btn-text" onclick="changePassword()" style="color:var(--accent-dark)">修改</button></div>`+
     `</div>`+
     adminItems.map(it=>`
     <div class="admin-item${it.is_available?'':' unavailable'}" id="admin-item-${it.id}">
@@ -1728,6 +1729,18 @@ function saveOptInline(id,field,value,itemId){
 async function delOptInline(id,itemId){
   if(!confirm('删除这个选项？'))return;
   try{await adminApi('/api/admin/options/'+id,{method:'DELETE'});showItemOptions(itemId)}catch(e){flashMsg('❌ '+e.message)}
+}
+
+async function changePassword(){
+  const oldPwd=document.getElementById('cfgOldPwd').value.trim();
+  const newPwd=document.getElementById('cfgNewPwd').value.trim();
+  if(!oldPwd||!newPwd){flashMsg('请填写新旧密码');return}
+  try{
+    await adminApi('/api/admin/change-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({old_password:oldPwd,new_password:newPwd})});
+    flashMsg('✅ 密码已修改，下次登录生效');
+    document.getElementById('cfgOldPwd').value='';
+    document.getElementById('cfgNewPwd').value='';
+  }catch(e){flashMsg('❌ '+e.message)}
 }
 
 // Upload payment QR code

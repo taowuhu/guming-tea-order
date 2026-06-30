@@ -174,14 +174,30 @@ def check_admin(authorization=Header(None)):
 class LoginReq(BaseModel):
     password: str
 
+def get_admin_password():
+    pwd = get_config("admin_password")
+    return pwd if pwd else ADMIN_PASSWORD
 
 @app.post("/api/admin/login")
 def admin_login(req: LoginReq):
-    if req.password != ADMIN_PASSWORD:
+    if req.password != get_admin_password():
         raise HTTPException(403, "密码错误")
     token = secrets.token_hex(32)
     _admin_sessions[token] = time.time()
     return {"token": token}
+
+class ChangePasswordReq(BaseModel):
+    old_password: str
+    new_password: str
+
+@app.post("/api/admin/change-password")
+def change_password(req: ChangePasswordReq, _=Depends(check_admin)):
+    if req.old_password != get_admin_password():
+        raise HTTPException(403, "旧密码错误")
+    if len(req.new_password) < 4:
+        raise HTTPException(400, "新密码至少4位")
+    set_config("admin_password", req.new_password)
+    return {"ok": True}
 
 
 # ============================================
@@ -476,6 +492,10 @@ def get_config(key, default=""):
     with get_db() as db:
         r = db.execute("SELECT value FROM config WHERE key=?",(key,)).fetchone()
     return r["value"] if r else default
+
+def set_config(key, value):
+    with get_db() as db:
+        db.execute("INSERT OR REPLACE INTO config (key,value) VALUES (?,?)",(key, value))
 
 @app.get("/api/payment")
 def get_payment():
