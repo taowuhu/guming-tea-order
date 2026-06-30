@@ -711,6 +711,18 @@ def user_mark_paid(order_no: str, uid=Depends(get_current_user)):
         db.execute("UPDATE orders SET status='paid' WHERE id=?",(o["id"],))
     return {"ok": True}
 
+@app.delete("/api/user/orders/{order_no}")
+def user_delete_order(order_no: str, uid=Depends(get_current_user)):
+    with get_db() as db:
+        u = db.execute("SELECT phone FROM users WHERE id=?",(uid,)).fetchone()
+        if not u: raise HTTPException(404,"用户不存在")
+        o = db.execute("SELECT * FROM orders WHERE (order_no=? AND customer_phone=?) OR (order_no=? AND customer_phone='')",(order_no,u["phone"],order_no)).fetchone()
+        if not o: raise HTTPException(404,"订单不存在")
+        if o["status"] != "pending": raise HTTPException(400,"只能删除待付款订单")
+        db.execute("DELETE FROM order_items WHERE order_id=?",(o["id"],))
+        db.execute("DELETE FROM orders WHERE id=?",(o["id"],))
+    return {"ok": True}
+
 
 @app.get("/api/health")
 def health():
