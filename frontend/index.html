@@ -411,7 +411,9 @@ body{
 .fav-btn:active{transform:scale(1.15)}
 
 /* My page */
-.my-page{padding:20px 14px 90px}
+.tab-content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+
+.my-page{padding:10px 14px 90px}
 .my-header{text-align:center;padding:20px 0}
 .my-avatar{width:64px;height:64px;border-radius:50%;background:var(--accent-soft);margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:28px}
 .my-name{font-size:16px;font-weight:600}
@@ -423,7 +425,9 @@ body{
 }
 
 /* Cart page */
-.cart-page{padding:0 14px 90px}
+.tab-content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+
+.my-page{padding:10px 14px 90px}
 .cart-page-empty{text-align:center;padding:80px 20px;color:var(--text3)}
 .cart-page-item{
   display:flex;gap:10px;padding:12px 0;border-bottom:0.5px solid var(--border);align-items:center;
@@ -1659,7 +1663,7 @@ async function showOrders(){
   try{
     const orders=await api('/api/orders');
     const statusLabel={pending:'⏳ 待处理',paid:'💰 已付款',shipped:'📦 已发货',completed:'✅ 已完成',cancelled:'❌ 已取消'};
-    el.innerHTML=`<h2>📋 订单管理 <button class="btn-text" onclick="refreshMenu()">🔙 返回产品管理</button></h2>`+
+    el.innerHTML=`<div class="my-page"><h2>📋 订单管理 <button class="btn-text" onclick="renderAdminPanel()">🔙 返回产品管理</button></h2>`+
       (orders.length?orders.map(o=>`
         <div class="cat-manage" style="margin-bottom:12px">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
@@ -1675,7 +1679,7 @@ async function showOrders(){
           ${o.items.map(i=>`<div style="font-size:13px;padding:2px 0">${i.name} ×${i.qty} · ¥${i.price} ${i.temperature} ${i.sweetness} ${i.toppings.length?i.toppings.join('+'):''}</div>`).join('')}
           <div style="text-align:right;font-weight:700;margin-top:4px">合计 ¥${o.total_price} · ${o.item_count}件</div>
         </div>
-      `).join(''):'<div class="loading">暂无订单</div>');
+      `).join(''):'<div class="loading">暂无订单</div>')+`</div>`;
   }catch(e){el.innerHTML=`<div class="loading">⚠️ ${e.message}</div>`}
 }
 
