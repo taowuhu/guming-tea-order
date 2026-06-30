@@ -451,7 +451,8 @@ def get_payment():
         "alipay": get_config("alipay_url"),
         "wechat": get_config("wechat_url"),
         "phone": get_config("contact_phone", ""),
-        "banner": get_config("banner_url", "")
+        "banner": get_config("banner_url", ""),
+        "address": get_config("contact_address", "景德镇市珠山区")
     }
 
 @app.get("/api/admin/config")

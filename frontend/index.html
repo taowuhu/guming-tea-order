@@ -443,6 +443,9 @@ body{
   flex:1;padding:12px;border-radius:24px;border:none;font-size:15px;font-weight:600;cursor:pointer;
   font-family:var(--font);background:var(--accent);color:#fff;
 }
+
+/* Category page */
+.sort-btn.active{font-weight:600;color:var(--accent-dark) !important}
 @media(max-width:360px){
   .drink-img{width:74px;height:74px}
   .drink-name{font-size:14px}
@@ -455,7 +458,7 @@ body{
 <div class="app" id="app">
   <header class="header">
     <div class="header-brand" id="brandClick">墨禾<span>·</span>陶瓷</div>
-    <div class="header-loc">📍 景德镇市珠山区</div>
+    <div class="header-loc" id="headerLoc"></div>
     <button class="header-admin" id="adminToggle" title="管理">⚙️</button>
   </header>
 
@@ -649,9 +652,14 @@ function searchProducts(query){
   return allItems.filter(it=>it.name.toLowerCase().includes(q)||(it.desc||'').toLowerCase().includes(q));
 }
 
-let siteConfig={phone:'',banner:''};
+let siteConfig={phone:'',banner:'',address:'景德镇市珠山区'};
 async function loadSiteConfig(){
-  try{const c=await api('/api/payment');siteConfig={phone:c.phone||'',banner:c.banner||''};}catch(e){}
+  try{const c=await api('/api/payment');siteConfig={phone:c.phone||'',banner:c.banner||'',address:c.address||'景德镇市珠山区'};}catch(e){}
+  updateAddressDisplay();
+}
+function updateAddressDisplay(){
+  const hl=document.getElementById('headerLoc');if(hl)hl.textContent='📍 '+siteConfig.address;
+  const sa=document.getElementById('shopAddr');if(sa)sa.textContent='📍 '+siteConfig.address;
 }
 
 function renderShop(){
@@ -665,7 +673,7 @@ function renderShop(){
       ${siteConfig.banner?`<img src="${siteConfig.banner}" alt="">`:'🏺 墨禾陶瓷 · 匠心手作'}
     </div>
     <div class="contact-bar">
-      <span class="addr">📍 景德镇市珠山区新厂东路169号(人杰公司院内第1栋)3-2号</span>
+      <span class="addr" id="shopAddr"></span>
       ${siteConfig.phone?`<a class="contact-phone" href="tel:${siteConfig.phone}">📞 ${siteConfig.phone}</a>`:'<span class="contact-phone" style="cursor:default">📞 电话</span>'}
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;margin:0 14px 8px;background:var(--bg-card);border-radius:12px;cursor:pointer" onclick="switchTab(1)">
@@ -699,56 +707,56 @@ function renderShopGrid(query){
 // ══════════════════════════════════════════════
 //  TAB 1: 分类 (CATEGORIES)
 // ══════════════════════════════════════════════
+let catSort='default'; // default, new, price-desc
+let selectedCatId=null;
+
 function renderCategories(){
+  selectedCatId=null;catSort='default';
   const el=document.getElementById('tabContent');
   el.innerHTML=`
-    <div style="padding:8px 14px">
-      <div class="search-bar" style="margin:0 0 12px">
-        <span style="font-size:16px">🔍</span>
-        <input type="text" id="catSearch" placeholder="搜索分类..." oninput="renderCatList(this.value)">
+    <div style="display:flex;height:calc(100vh - 110px)">
+      <div id="catSidebar" style="width:90px;background:#f8f5f0;overflow-y:auto;flex-shrink:0;padding:4px 0">
+        ${menuData.map(c=>`<div class="cat-side-item" data-cat="${c.id}" onclick="selectCategory('${c.id}')" style="padding:12px 8px;text-align:center;font-size:12px;color:var(--text2);cursor:pointer;border-right:3px solid transparent">${c.name.replace(/[^\u4e00-\u9fa5]/g,'')}<br><span style="font-size:10px;color:var(--text3)">${c.items.length}件</span></div>`).join('')}
       </div>
-      <div id="catList"></div>
+      <div style="flex:1;overflow-y:auto;padding:0 10px 20px">
+        <div style="display:flex;gap:6px;padding:10px 0;position:sticky;top:0;background:var(--bg);z-index:2">
+          ${[['default','🔥 销量优先'],['new','🆕 最新上架'],['price-desc','💰 价格↓']].map(([k,v])=>`<button class="sort-btn${catSort===k?' active':''}" onclick="setCatSort('${k}')" style="flex:1;padding:6px 0;border-radius:16px;border:0.5px solid var(--border);background:${catSort===k?'var(--accent-soft)':'#fff'};font-size:12px;cursor:pointer;font-family:var(--font)">${v}</button>`).join('')}
+        </div>
+        <div class="product-grid" id="catProductGrid" style="padding:0">${renderAllCatProducts()}</div>
+      </div>
     </div>`;
-  renderCatList('');
+  if(menuData.length) selectCategory(menuData[0].id);
 }
 
-function renderCatList(query){
-  const list=document.getElementById('catList');
-  if(!list) return;
-  const q=query.toLowerCase().trim();
-  let cats=menuData;
-  if(q) cats=cats.filter(c=>c.name.toLowerCase().includes(q)||c.items.some(i=>i.name.toLowerCase().includes(q)));
-  list.innerHTML=cats.map(cat=>`
-    <div class="my-menu-item" onclick="enterCategory('${cat.id}')">
-      <span>${cat.name}</span>
-      <span style="color:var(--text3);font-size:13px">${cat.items.length}款 →</span>
-    </div>`).join('');
+function renderAllCatProducts(){
+  let items=[];
+  if(selectedCatId){const c=menuData.find(x=>x.id===selectedCatId);if(c)items=[...c.items];}
+  else items=menuData.flatMap(c=>c.items);
+  if(catSort==='new') items.sort((a,b)=>b.id.localeCompare(a.id));
+  else if(catSort==='price-desc') items.sort((a,b)=>b.price-a.price);
+  return items.map(it=>{
+    const cid=menuData.find(c=>c.items.some(i=>i.id===it.id))?.id||'';
+    return `<div class="product-card" onclick="openDetail('${cid}','${it.id}')">
+      <div class="product-card-img">${imgOrEmoji(it.image_url,it.id)}</div>
+      <div class="product-card-info"><div class="product-card-name">${it.name}</div><div class="product-card-desc">${it.desc||''}</div>
+      <div class="product-card-bottom"><div class="product-card-price">${it.price}</div><button class="product-card-add" onclick="event.stopPropagation();quickAdd('${cid}','${it.id}')">+</button></div></div>
+    </div>`;
+  }).join('');
 }
 
-function enterCategory(catId){
-  const cat=menuData.find(c=>c.id===catId);
-  if(!cat) return;
-  const el=document.getElementById('tabContent');
-  el.innerHTML=`
-    <div style="padding:8px 14px">
-      <div style="display:flex;align-items:center;gap:8px;padding:8px 0;margin-bottom:8px">
-        <button class="btn-text" onclick="switchTab(1)" style="font-size:18px">←</button>
-        <span style="font-size:16px;font-weight:600">${cat.name}</span>
-        <span style="color:var(--text3);font-size:13px">${cat.items.length}款</span>
-      </div>
-      <div class="product-grid">${cat.items.map(it=>`
-        <div class="product-card" onclick="openDetail('${cat.id}','${it.id}')">
-          <div class="product-card-img">${imgOrEmoji(it.image_url,it.id)}</div>
-          <div class="product-card-info">
-            <div class="product-card-name">${it.name}</div>
-            <div class="product-card-desc">${it.desc||''}</div>
-            <div class="product-card-bottom">
-              <div class="product-card-price">${it.price}</div>
-              <button class="product-card-add" onclick="event.stopPropagation();quickAdd('${cat.id}','${it.id}')">+</button>
-            </div>
-          </div>
-        </div>`).join('')}</div>
-    </div>`;
+function selectCategory(catId){
+  selectedCatId=catId;
+  document.querySelectorAll('.cat-side-item').forEach(el=>{el.style.background='';el.style.borderRightColor='transparent';el.style.color='var(--text2)';el.style.fontWeight='normal'});
+  const el=document.querySelector(`.cat-side-item[data-cat="${catId}"]`);
+  if(el){el.style.background='#fff';el.style.borderRightColor='var(--accent-dark)';el.style.color='var(--accent-dark)';el.style.fontWeight='600'}
+  const grid=document.getElementById('catProductGrid');if(grid)grid.innerHTML=renderAllCatProducts();
+}
+
+function setCatSort(sort){
+  catSort=sort;
+  document.querySelectorAll('.sort-btn').forEach(b=>{b.style.background='#fff';b.classList.remove('active')});
+  const btn=event.target;btn.style.background='var(--accent-soft)';btn.classList.add('active');
+  const grid=document.getElementById('catProductGrid');if(grid)grid.innerHTML=renderAllCatProducts();
 }
 
 // ══════════════════════════════════════════════
@@ -1059,6 +1067,7 @@ async function loadPayConfig(){
       const w=document.getElementById('cfgWechat');if(w)w.value=cfg.wechat_url||'';
       const p=document.getElementById('cfgPhone');if(p)p.value=cfg.contact_phone||'';
       const b=document.getElementById('cfgBanner');if(b)b.value=cfg.banner_url||'';
+      const d=document.getElementById('cfgAddr');if(d)d.value=cfg.contact_address||'';
     },100);
   }catch(e){}
 }
@@ -1067,12 +1076,14 @@ function savePayCfg(){
   const wechat=document.getElementById('cfgWechat').value.trim();
   const phone=document.getElementById('cfgPhone').value.trim();
   const banner=document.getElementById('cfgBanner').value.trim();
+  const addr=document.getElementById('cfgAddr').value.trim();
   (async()=>{
     try{
       await adminApi('/api/admin/config',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'alipay_url',value:alipay})});
       await adminApi('/api/admin/config',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'wechat_url',value:wechat})});
       await adminApi('/api/admin/config',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'contact_phone',value:phone})});
       await adminApi('/api/admin/config',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'banner_url',value:banner})});
+      await adminApi('/api/admin/config',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:'contact_address',value:addr})});
       flashMsg('✅ 配置已保存');
     }catch(e){flashMsg('❌ '+e.message)}
   })();
@@ -1095,6 +1106,7 @@ function renderAdminPanel(){
     `</div>`+
     `<div class="cat-manage"><div class="cat-manage-title">⚙️ 站点设置</div>`+
     `<div class="cat-row"><span style="width:60px;font-size:13px">🖼️ Banner</span><input id="cfgBanner" placeholder="Banner图片URL" class="cat-name-input" style="font-size:12px"> <button class="btn-text" onclick="savePayCfg()" style="color:var(--accent-dark)">💾</button></div>`+
+    `<div class="cat-row"><span style="width:60px;font-size:13px">📍 地址</span><input id="cfgAddr" placeholder="店铺地址" class="cat-name-input" style="font-size:12px"> <button class="btn-text" onclick="savePayCfg()" style="color:var(--accent-dark)">💾</button></div>`+
     `<div class="cat-row"><span style="width:60px;font-size:13px">📞 电话</span><input id="cfgPhone" placeholder="如 13800000000" class="cat-name-input" style="font-size:12px"> <button class="btn-text" onclick="savePayCfg()" style="color:var(--accent-dark)">💾</button></div>`+
     `<div class="cat-row"><span style="width:60px;font-size:13px">💙 支付宝</span><input id="cfgAlipay" placeholder="付款链接" class="cat-name-input" style="font-size:12px"> <button class="btn-text" onclick="savePayCfg()" style="color:var(--accent-dark)">💾</button></div>`+
     `<div class="cat-row"><span style="width:60px;font-size:13px">💚 微信</span><input id="cfgWechat" placeholder="付款链接" class="cat-name-input" style="font-size:12px"> <button class="btn-text" onclick="savePayCfg()" style="color:var(--accent-dark)">💾</button></div>`+
