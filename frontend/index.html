@@ -382,7 +382,7 @@ body{
 
 /* Product grid (2 columns) */
 .product-grid{
-  display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 14px 90px;
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 14px calc(90px + var(--safe-bottom));
 }
 .product-card{
   background:var(--bg-card);border-radius:var(--radius-md);overflow:hidden;
@@ -474,7 +474,7 @@ body{
 
   <div class="tab-content" id="tabContent"></div>
 
-  <div id="shopCartBar" style="position:fixed;bottom:60px;left:50%;transform:translateX(-50%);z-index:90;width:100%;max-width:420px;cursor:pointer;display:none" onclick="toggleShopCartExpand()">
+  <div id="shopCartBar" style="position:fixed;bottom:70px;left:50%;transform:translateX(-50%);z-index:90;width:100%;max-width:420px;cursor:pointer;display:none" onclick="toggleShopCartExpand()">
     <div style="background:rgba(44,36,22,0.92);backdrop-filter:blur(12px);padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
       <div><span style="color:#fff;font-size:14px;font-weight:700" id="shopCartCount"></span><span style="color:rgba(255,255,255,0.6);font-size:12px;margin-left:4px">件</span> <span style="color:var(--accent-light);font-size:16px;font-weight:700;margin-left:8px" id="shopCartTotal"></span></div>
       <button onclick="event.stopPropagation();switchTab(2)" style="padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:20px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)">去结算</button>
