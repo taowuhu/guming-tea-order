@@ -1663,15 +1663,14 @@ function addOptInline(gk,itemId){
   })();
 }
 function saveOptInline(id,field,value,itemId){
-  const body={name:'',price:0};
-  if(field==='name') body.name=value;
-  else body.price=parseFloat(value)||0;
-  // We need the current name/price to send both
   (async()=>{
     try{
-      // Just save the changed field
-      const patch={};patch[field]=field==='price'?parseFloat(value)||0:value;
-      await adminApi('/api/admin/options/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(patch)});
+      // Read both name and price from the DOM
+      const row=event.target.closest('div');
+      const nameInput=row.querySelector('input[type=text]')||row.querySelector('input:first-child');
+      const priceInput=row.querySelector('input[type=number]');
+      const body={name:nameInput?.value||'',price:priceInput?parseFloat(priceInput.value)||0:0};
+      await adminApi('/api/admin/options/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     }catch(e){flashMsg('❌ '+e.message)}
   })();
 }
