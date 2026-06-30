@@ -24,6 +24,7 @@ FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
 UPLOAD_DIR.mkdir(exist_ok=True)
 
 _admin_sessions: dict[str, float] = {}
+_user_sessions: dict[str, tuple] = {}  # token -> (user_id, expiry)
 
 # ============================================
 # APP
@@ -89,6 +90,21 @@ def init_db():
                 group_key TEXT NOT NULL,
                 name TEXT NOT NULL,
                 price REAL DEFAULT 0
+            );
+            CREATE TABLE IF NOT EXISTS users (
+                id TEXT PRIMARY KEY, phone TEXT UNIQUE NOT NULL,
+                name TEXT DEFAULT '', created_at REAL
+            );
+            CREATE TABLE IF NOT EXISTS favorites (
+                user_id TEXT, item_id TEXT,
+                PRIMARY KEY (user_id, item_id)
+            );
+            CREATE TABLE IF NOT EXISTS user_addresses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT, name TEXT, phone TEXT,
+                province TEXT DEFAULT '', city TEXT DEFAULT '',
+                district TEXT DEFAULT '', detail TEXT DEFAULT '',
+                is_default INTEGER DEFAULT 0
             );
             CREATE TABLE IF NOT EXISTS config (
                 key TEXT PRIMARY KEY,
@@ -472,6 +488,146 @@ def admin_set_config(req: ConfigUpdate, _=Depends(check_admin)):
     with get_db() as db:
         db.execute("INSERT OR REPLACE INTO config (key,value) VALUES (?,?)",(req.key,req.value))
     return {"ok": True}
+
+
+# ============================================
+# USER API
+# ============================================
+class UserLoginReq(BaseModel):
+    phone: str
+    name: str = ""
+
+@app.post("/api/user/login")
+def user_login(req: UserLoginReq):
+    if not req.phone:
+        raise HTTPException(400, "手机号不能为空")
+    with get_db() as db:
+        u = db.execute("SELECT * FROM users WHERE phone=?", (req.phone,)).fetchone()
+        if not u:
+            uid = uuid.uuid4().hex[:12]
+            db.execute("INSERT INTO users (id,phone,name,created_at) VALUES (?,?,?,?)",
+                       (uid, req.phone, req.name or "用户" + req.phone[-4:], time.time()))
+        else:
+            uid = u["id"]
+    token = secrets.token_hex(32)
+    _user_sessions[token] = (uid, time.time())
+    return {"token": token, "user": {"id": uid, "phone": req.phone, "name": req.name or "用户" + req.phone[-4:]}}
+
+
+def get_current_user(authorization=Header(None)):
+    if not authorization:
+        raise HTTPException(401, "请先登录")
+    token = authorization.replace("Bearer ", "")
+    if token not in _user_sessions:
+        raise HTTPException(401, "登录已过期")
+    uid, ts = _user_sessions[token]
+    if time.time() - ts > 86400 * 7:
+        del _user_sessions[token]
+        raise HTTPException(401, "登录已过期")
+    return uid
+
+
+@app.get("/api/user/info")
+def user_info(uid=Depends(get_current_user)):
+    with get_db() as db:
+        u = db.execute("SELECT * FROM users WHERE id=?", (uid,)).fetchone()
+    return {"id": u["id"], "phone": u["phone"], "name": u["name"]}
+
+
+# Favorites
+@app.get("/api/user/favorites")
+def list_favorites(uid=Depends(get_current_user)):
+    with get_db() as db:
+        fvs = db.execute("SELECT item_id FROM favorites WHERE user_id=?", (uid,)).fetchall()
+        items = []
+        for fv in fvs:
+            it = db.execute("SELECT * FROM menu_items WHERE id=? AND is_available=1", (fv["item_id"],)).fetchone()
+            if it:
+                items.append({"item_id": it["id"], "category_id": it["category_id"], "item_name": it["name"], "price": it["price"], "image_url": it["image_url"] or ""})
+    return items
+
+
+@app.post("/api/user/favorites/{item_id}")
+def add_favorite(item_id: str, uid=Depends(get_current_user)):
+    with get_db() as db:
+        db.execute("INSERT OR IGNORE INTO favorites (user_id,item_id) VALUES (?,?)", (uid, item_id))
+    return {"ok": True}
+
+
+@app.delete("/api/user/favorites/{item_id}")
+def remove_favorite(item_id: str, uid=Depends(get_current_user)):
+    with get_db() as db:
+        db.execute("DELETE FROM favorites WHERE user_id=? AND item_id=?", (uid, item_id))
+    return {"ok": True}
+
+
+# Addresses
+@app.get("/api/user/addresses")
+def list_addresses(uid=Depends(get_current_user)):
+    with get_db() as db:
+        rows = db.execute("SELECT * FROM user_addresses WHERE user_id=? ORDER BY is_default DESC,id DESC", (uid,)).fetchall()
+    return [{"id": r["id"], "name": r["name"], "phone": r["phone"],
+                               "address": r["province"] or "", "detail": r["detail"] or "",
+                               "is_default": r["is_default"]} for r in rows]
+
+
+class AddressUpdate(BaseModel):
+    name: str
+    phone: str
+    address: str = ""
+    detail: str = ""
+    is_default: int = 0
+
+
+@app.post("/api/user/addresses")
+def create_address(req: AddressUpdate, uid=Depends(get_current_user)):
+    with get_db() as db:
+        if req.is_default:
+            db.execute("UPDATE user_addresses SET is_default=0 WHERE user_id=?", (uid,))
+        c = db.execute(
+            "INSERT INTO user_addresses (user_id,name,phone,province,detail,is_default) VALUES (?,?,?,?,?,?)",
+            (uid, req.name, req.phone, req.address, req.detail, req.is_default))
+    return {"ok": True, "id": c.lastrowid}
+
+
+@app.put("/api/user/addresses/{addr_id}")
+def update_address(addr_id: int, req: AddressUpdate, uid=Depends(get_current_user)):
+    with get_db() as db:
+        if req.is_default:
+            db.execute("UPDATE user_addresses SET is_default=0 WHERE user_id=?", (uid,))
+        db.execute(
+            "UPDATE user_addresses SET name=?,phone=?,province=?,detail=?,is_default=? WHERE id=? AND user_id=?",
+            (req.name, req.phone, req.address, req.detail, req.is_default, addr_id, uid))
+    return {"ok": True}
+
+
+@app.delete("/api/user/addresses/{addr_id}")
+def delete_address(addr_id: int, uid=Depends(get_current_user)):
+    with get_db() as db:
+        db.execute("DELETE FROM user_addresses WHERE id=? AND user_id=?", (addr_id, uid))
+    return {"ok": True}
+
+
+# User orders (filtered by user_id, with status filter)
+@app.get("/api/user/orders")
+def user_orders(status: str = "", uid=Depends(get_current_user)):
+    with get_db() as db:
+        q = "SELECT * FROM orders WHERE customer_phone=(SELECT phone FROM users WHERE id=?)"
+        p = [uid]
+        if status:
+            q += " AND status=?"
+            p.append(status)
+        q += " ORDER BY created_at DESC LIMIT 50"
+        result = []
+        for r in db.execute(q, p).fetchall():
+            items = db.execute("SELECT * FROM order_items WHERE order_id=?", (r["id"],)).fetchall()
+            result.append({
+                "id": r["id"], "order_no": r["order_no"], "status": r["status"], "total_price": r["total_price"],
+                "created_at": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(r["created_at"])),
+                "items": [{"name": i["item_name"], "qty": i["quantity"], "price": i["base_price"]} for i in items],
+                "item_count": sum(i["quantity"] for i in items)
+            })
+        return result
 
 
 @app.get("/api/health")

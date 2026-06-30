@@ -399,6 +399,12 @@ body{
   width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;
   border:none;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;
 }
+.fav-btn{
+  position:absolute;top:4px;right:4px;width:28px;height:28px;border-radius:50%;
+  background:rgba(255,255,255,0.7);border:none;font-size:14px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;z-index:2;backdrop-filter:blur(4px);
+}
+.fav-btn:active{transform:scale(1.15)}
 
 /* My page */
 .my-page{padding:20px 14px 90px}
@@ -524,6 +530,8 @@ let currentSel={temperature:'正常冰',sweetness:'标准糖',toppings:[],qty:1}
 let isAdmin=false, adminItems=[], adminCats=[];
 let uploadTargetItemId=null, uploadFile=null;
 let adminToken=localStorage.getItem('guming_admin_token')||'';
+let currentUser=null;let userToken='';
+let favorites=[];
 let currentTab=0;
 const API='';
 
@@ -557,6 +565,7 @@ async function init(){
   try{
     await Promise.all([fetchMenu(),fetchOptions()]);loadSiteConfig();
     setupModalListeners();setupCartListeners();setupAdminListeners();
+    loadUserSession();
     switchTab(0);
   }catch(e){
     document.getElementById('tabContent').innerHTML=`<div class="loading">⚠️ ${e.message}<br><small>请确认后端已启动</small></div>`;
@@ -692,7 +701,7 @@ function renderShopGrid(query){
   if(!items.length){grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text3)">未找到产品</div>';return}
   grid.innerHTML=items.map(it=>`
     <div class="product-card" onclick="openDetail('${it.catId}','${it.id}')">
-      <div class="product-card-img">${imgOrEmoji(it.image_url,it.id)}</div>
+      <div class="product-card-img">${imgOrEmoji(it.image_url,it.id)}<button class="fav-btn" onclick="event.stopPropagation();toggleFavorite('${it.catId}','${it.id}','${it.name.replace(/'/g,"\\'")}')" title="收藏">${isFavorited(it.id)?'❤️':'🤍'}</button></div>
       <div class="product-card-info">
         <div class="product-card-name">${it.name}</div>
         <div class="product-card-desc">${it.desc||''}</div>
@@ -737,7 +746,7 @@ function renderAllCatProducts(){
   return items.map(it=>{
     const cid=menuData.find(c=>c.items.some(i=>i.id===it.id))?.id||'';
     return `<div class="product-card" onclick="openDetail('${cid}','${it.id}')">
-      <div class="product-card-img">${imgOrEmoji(it.image_url,it.id)}</div>
+      <div class="product-card-img">${imgOrEmoji(it.image_url,it.id)}<button class="fav-btn" onclick="event.stopPropagation();toggleFavorite('${cid}','${it.id}','${it.name.replace(/'/g,"\\'")}')" title="收藏">${isFavorited(it.id)?'❤️':'🤍'}</button></div>
       <div class="product-card-info"><div class="product-card-name">${it.name}</div><div class="product-card-desc">${it.desc||''}</div>
       <div class="product-card-bottom"><div class="product-card-price">${it.price}</div><button class="product-card-add" onclick="event.stopPropagation();quickAdd('${cid}','${it.id}')">+</button></div></div>
     </div>`;
@@ -814,24 +823,201 @@ function cartPageQty(idx,d){
 // ══════════════════════════════════════════════
 function renderMyPage(){
   const el=document.getElementById('tabContent');
+  if(!currentUser){
+    el.innerHTML=`
+      <div class="my-page">
+        <div class="my-header">
+          <div class="my-avatar">👤</div>
+          <div class="my-name">未登录</div>
+          <p style="font-size:12px;color:var(--text3);margin-top:4px">登录后可查看订单和收藏</p>
+        </div>
+        <div style="padding:0 10px">
+          <input id="loginPhone" placeholder="请输入手机号" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:12px;font-size:15px;text-align:center;margin-bottom:8px;font-family:var(--font)" type="tel" maxlength="11">
+          <button onclick="userLogin()" style="width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:24px;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--font)">登录 / 注册</button>
+        </div>
+      </div>`;
+    return;
+  }
+  // Logged in view - build HTML for order tabs, favorites, addresses
   el.innerHTML=`
     <div class="my-page">
       <div class="my-header">
         <div class="my-avatar">👤</div>
-        <div class="my-name">陶瓷爱好者</div>
+        <div class="my-name">${currentUser.name||'用户'+currentUser.phone.slice(-4)}</div>
+        <p style="font-size:12px;color:var(--text3)">📞 ${currentUser.phone}</p>
       </div>
       <div class="my-menu">
-        <div class="my-menu-item" onclick="switchTab(0);document.getElementById('shopSearch')&&document.getElementById('shopSearch').focus()">
-          <span>📋 浏览商品</span><span style="color:var(--text3)">→</span>
+        <div style="background:var(--bg-card);border-radius:12px;padding:12px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span style="font-size:14px;font-weight:600">📋 我的订单</span>
+            <span style="font-size:12px;color:var(--accent-dark);cursor:pointer" onclick="showMyOrders()">查看全部 ›</span>
+          </div>
+          <div id="myOrderTabs" style="display:flex;gap:6px;font-size:11px">
+            ${[['pending','⏳ 待付款'],['paid','💰 待发货'],['shipped','📦 待收货'],['completed','✅ 已完成'],['cancelled','❌ 售后']].map(([k,v])=>`<div style="flex:1;text-align:center;padding:6px 2px;cursor:pointer" onclick="showMyOrders('${k}')">${v}</div>`).join('')}
+          </div>
         </div>
-        <div class="my-menu-item" onclick="switchTab(2)">
-          <span>📦 我的询价单</span><span style="color:var(--text3)">→</span>
-        </div>
-        <div class="my-menu-item" onclick="showLogin()">
-          <span>🔐 管理后台</span><span style="color:var(--text3)">→</span>
-        </div>
+        <div class="my-menu-item" onclick="showMyFavorites()">❤️ 我的收藏 <span>›</span></div>
+        <div class="my-menu-item" onclick="showMyAddresses()">📍 收货地址 <span>›</span></div>
       </div>
+      <button onclick="userLogout()" style="width:100%;margin-top:20px;padding:10px;background:none;border:1px solid var(--border);border-radius:12px;color:var(--text3);font-size:14px;cursor:pointer;font-family:var(--font)">退出登录</button>
     </div>`;
+}
+
+async function userLogin(){
+  const phone=document.getElementById('loginPhone').value.trim();
+  if(!phone||phone.length!==11){flashMsg('请输入正确的手机号');return}
+  try{
+    const r=await api('/api/user/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone})});
+    currentUser=r.user;userToken=r.token;localStorage.setItem('mohe_user',JSON.stringify({phone:r.user.phone,token:r.token}));
+    renderMyPage();flashMsg('✅ 登录成功');
+  }catch(e){flashMsg('❌ '+e.message)}
+}
+function userLogout(){currentUser=null;userToken='';localStorage.removeItem('mohe_user');renderMyPage()}
+function loadUserSession(){
+  const saved=localStorage.getItem('mohe_user');
+  if(saved){try{const d=JSON.parse(saved);currentUser={phone:d.phone,name:''};userToken=d.token}catch(e){}}
+}
+async function showMyOrders(filterStatus){
+  const el=document.getElementById('tabContent');
+  el.innerHTML='<div class="my-page" style="padding-top:8px"><div class="loading">加载中...</div></div>';
+  try{
+    const orders=await fetchUserOrders(filterStatus);
+    const statusLabel={pending:'⏳ 待付款',paid:'💰 待发货',shipped:'📦 待收货',completed:'✅ 已完成',cancelled:'❌ 已取消'};
+    el.innerHTML=`
+      <div class="my-page" style="padding-top:8px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <button class="btn-text" onclick="renderMyPage()">← 返回</button>
+          <span style="font-size:15px;font-weight:600">我的订单</span>
+        </div>
+        ${orders.length?orders.map(o=>`
+          <div style="background:var(--bg-card);border-radius:12px;padding:12px;margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;font-size:13px">
+              <b>${o.order_no}</b><span>${statusLabel[o.status]||o.status}</span>
+            </div>
+            <div style="font-size:12px;color:var(--text3)">${o.created_at}</div>
+            ${(o.items||[]).map(i=>`<div style="font-size:13px;padding:2px 0">${i.name} ×${i.qty} ¥${i.price}</div>`).join('')}
+            <div style="text-align:right;font-weight:700">合计 ¥${o.total_price}</div>
+          </div>
+        `).join(''):'<div class="cart-page-empty">暂无订单</div>'}
+        <button class="btn-text" onclick="renderMyPage()" style="width:100%;margin-top:8px">← 返回</button>
+      </div>`;
+  }catch(e){el.innerHTML=`<div class="my-page"><div class="loading">⚠️ ${e.message}</div></div>`}
+}
+async function fetchUserOrders(status){
+  const url=status?`/api/user/orders?status=${status}`:'/api/user/orders';
+  const r=await fetch(url,{headers:{'Authorization':'Bearer '+userToken}});
+  if(!r.ok)throw new Error('获取订单失败');
+  return r.json();
+}
+
+// Favorites
+async function showMyFavorites(){
+  const el=document.getElementById('tabContent');
+  el.innerHTML='<div class="my-page" style="padding-top:8px"><div class="loading">加载中...</div></div>';
+  try{
+    const r=await fetch('/api/user/favorites',{headers:{'Authorization':'Bearer '+userToken}});
+    const favs=await r.json();
+    el.innerHTML=`
+      <div class="my-page" style="padding-top:8px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <button class="btn-text" onclick="renderMyPage()">← 返回</button><span style="font-size:15px;font-weight:600">❤️ 我的收藏</span>
+        </div>
+        <div class="product-grid" style="padding:0">${favs.length?favs.map(it=>`
+          <div class="product-card" onclick="openDetail('${it.category_id}','${it.item_id}')">
+            <div class="product-card-img">${getEmoji(it.item_id)}</div>
+            <div class="product-card-info"><div class="product-card-name">${it.item_name}</div><div class="product-card-bottom"><div class="product-card-price">${it.price}</div></div></div>
+          </div>
+        `).join(''):'<div class="cart-page-empty" style="grid-column:1/-1">暂无收藏</div>'}</div>
+        <button class="btn-text" onclick="renderMyPage()" style="width:100%;margin-top:8px">← 返回</button>
+      </div>`;
+  }catch(e){el.innerHTML=`<div class="my-page"><div class="loading">⚠️ ${e.message}</div></div>`}
+}
+
+// Addresses
+async function showMyAddresses(){
+  const el=document.getElementById('tabContent');
+  el.innerHTML='<div class="my-page" style="padding-top:8px"><div class="loading">加载中...</div></div>';
+  try{
+    const r=await fetch('/api/user/addresses',{headers:{'Authorization':'Bearer '+userToken}});
+    const addrs=await r.json();
+    el.innerHTML=`
+      <div class="my-page" style="padding-top:8px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <button class="btn-text" onclick="renderMyPage()">← 返回</button><span style="font-size:15px;font-weight:600">📍 收货地址</span>
+          <button class="btn-text" onclick="showAddAddress()" style="margin-left:auto;color:var(--accent-dark)">＋ 新增</button>
+        </div>
+        ${addrs.map((a,i)=>`
+          <div style="background:var(--bg-card);border-radius:12px;padding:12px;margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between">
+              <b>${a.name}</b><span style="font-size:13px">📞 ${a.phone}</span>
+            </div>
+            <div style="font-size:13px;color:var(--text2);margin-top:4px">${a.address} ${a.detail||''}</div>
+            <div style="margin-top:6px;display:flex;gap:8px">
+              <button class="btn-text" onclick="editAddress(${a.id},'${a.name}','${a.phone}','${a.address}','${a.detail||''}')" style="font-size:11px">✏️ 编辑</button>
+              <button class="btn-text" onclick="delAddress(${a.id})" style="font-size:11px;color:#e25c3b">🗑 删除</button>
+            </div>
+          </div>
+        `).join('')}
+        <button class="btn-text" onclick="renderMyPage()" style="width:100%;margin-top:8px">← 返回</button>
+      </div>`;
+  }catch(e){el.innerHTML=`<div class="my-page"><div class="loading">⚠️ ${e.message}</div></div>`}
+}
+
+function showAddAddress(){
+  const name=prompt('收货人姓名');if(!name)return;
+  const phone=prompt('手机号');if(!phone)return;
+  const addr=prompt('省市区');if(!addr)return;
+  const detail=prompt('详细地址')||'';
+  (async()=>{
+    try{
+      await fetch('/api/user/addresses',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+userToken},body:JSON.stringify({name,phone,address:addr,detail})});
+      flashMsg('✅ 已添加');
+      showMyAddresses();
+    }catch(e){flashMsg('❌ '+e.message)}
+  })();
+}
+function editAddress(id,oldName,oldPhone,oldAddr,oldDetail){
+  const name=prompt('收货人姓名',oldName);if(!name)return;
+  const phone=prompt('手机号',oldPhone);if(!phone)return;
+  const addr=prompt('省市区',oldAddr);if(!addr)return;
+  const detail=prompt('详细地址',oldDetail)||'';
+  (async()=>{
+    try{
+      await fetch(`/api/user/addresses/${id}`,{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+userToken},body:JSON.stringify({name,phone,address:addr,detail})});
+      flashMsg('✅ 已更新');
+      showMyAddresses();
+    }catch(e){flashMsg('❌ '+e.message)}
+  })();
+}
+async function delAddress(id){
+  if(!confirm('删除这个地址？'))return;
+  try{
+    await fetch(`/api/user/addresses/${id}`,{method:'DELETE',headers:{'Authorization':'Bearer '+userToken}});
+    flashMsg('🗑 已删除');
+    showMyAddresses();
+  }catch(e){flashMsg('❌ '+e.message)}
+}
+
+// Favorite toggle functions
+function isFavorited(itemId){
+  return favorites.some(f=>f.item_id===itemId);
+}
+async function toggleFavorite(catId,itemId,itemName){
+  if(!currentUser){flashMsg('请先登录');return}
+  const idx=favorites.findIndex(f=>f.item_id===itemId);
+  try{
+    if(idx>=0){
+      await fetch(`/api/user/favorites/${itemId}`,{method:'DELETE',headers:{'Authorization':'Bearer '+userToken}});
+      favorites.splice(idx,1);
+    }else{
+      await fetch('/api/user/favorites',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+userToken},body:JSON.stringify({category_id:catId,item_id:itemId,item_name:itemName})});
+      favorites.push({category_id:catId,item_id:itemId,item_name:itemName});
+    }
+    // Re-render if in shop or categories
+    if(currentTab===0) renderShopGrid(document.getElementById('shopSearch')?.value||'');
+    else if(currentTab===1) renderCategories();
+    else renderMyPage();
+  }catch(e){flashMsg('❌ '+e.message)}
 }
 
 // ══════════════════════════════════════════════
@@ -857,7 +1043,7 @@ function renderModal(){
   const tp=currentSel.toppings.reduce((s,t)=>{const o=optionsData.toppings.find(x=>x.name===t);return s+(o?o.price:0)},0);
   const total=(d.price+tp)*currentSel.qty;
   document.getElementById('modalBody').innerHTML=`
-    <div class="modal-img-wrap">${d.image_url?`<img src="${d.image_url}" alt="">`:d.emoji||'🏺'}</div>
+    <div class="modal-img-wrap">${d.image_url?`<img src="${d.image_url}" alt="">`:d.emoji||'🏺'}<button class="fav-btn" style="top:8px;right:8px" onclick="event.stopPropagation();toggleFavorite('${currentDrink.catId}','${currentDrink.itemId}','${d.name.replace(/'/g,"\\'")}')" title="收藏">${isFavorited(currentDrink.itemId)?'❤️':'🤍'}</button></div>
     <div class="modal-name">${d.name}</div><div class="modal-price-big" id="modalUnitPrice">${d.price+tp}</div>
     <div class="option-group"><div class="option-label">尺寸</div><div class="option-chips" id="chips-temp"></div></div>
     <div class="option-group"><div class="option-label">釉色</div><div class="option-chips" id="chips-sweet"></div></div>
@@ -969,7 +1155,8 @@ async function checkout(){
   if(!cart.length)return;const tot=cartTotal(),cnt=cartCount();
   try{
     const items=cart.map(it=>({menu_item_id:it.drinkId,item_name:it.name,base_price:it.basePrice,quantity:it.qty,temperature:it.temperature,sweetness:it.sweetness,toppings:it.toppings}));
-    const order=await api('/api/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items})});
+    const headers={'Content-Type':'application/json'};if(userToken)headers['Authorization']='Bearer '+userToken;
+    const order=await api('/api/orders',{method:'POST',headers,body:JSON.stringify({items})});
     cart=[];updateCartUI();renderCartDrawer();closeCartDrawer();
     if(currentTab===2) renderCartPage();
     const pay=await api('/api/payment');
