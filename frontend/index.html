@@ -1276,6 +1276,7 @@ async function confirmOrderFromPay(btn){
     const order=await api('/api/orders',{method:'POST',headers,body:JSON.stringify({items})});
     cart=[];updateCartUI();renderCartDrawer();closeCartDrawer();
     if(currentTab===2) renderCartPage();
+    if(currentTab===3) renderMyPage();
     // Transition to success
     card.innerHTML='<div class="toast-icon">✅</div><div class="toast-title">已提交！</div><div class="toast-desc">'+cnt+'件商品 · <strong>¥'+tot+'</strong></div><div style="font-size:12px;color:var(--text3)">下单号 <strong style="color:var(--accent-dark);font-size:16px">'+order.order_no+'</strong></div><div style="font-size:11px;color:#e25c3b;margin-top:6px">⚠️ 商家确认收款后订单生效</div><button class="btn-checkout toast-close" style="margin-top:16px;background:#1a1a1a;color:#fff">好的</button></div>';
     // Re-bind close
@@ -1294,6 +1295,7 @@ async function confirmOrder(){
     const order=await api('/api/orders',{method:'POST',headers,body:JSON.stringify({items})});
     cart=[];updateCartUI();renderCartDrawer();closeCartDrawer();
     if(currentTab===2) renderCartPage();
+    if(currentTab===3) renderMyPage();
     showToast('✅','下单成功！','<div style="font-size:13px;color:var(--text2)">'+cnt+'件商品 · <strong>¥'+tot+'</strong></div>',
       '下单号 <strong style="color:var(--accent-dark);font-size:16px">'+order.order_no+'</strong>');
   }catch(e){alert('下单失败: '+e.message)}
