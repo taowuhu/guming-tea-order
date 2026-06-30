@@ -991,7 +991,8 @@ function showAddAddress(){
   const detail=prompt('详细地址')||'';
   (async()=>{
     try{
-      await fetch('/api/user/addresses',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+userToken},body:JSON.stringify({name,phone,address:addr,detail})});
+      const r=await fetch('/api/user/addresses',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+userToken},body:JSON.stringify({name,phone,address:addr,detail})});
+      if(!r.ok){const e=await r.json();throw new Error(e.detail||'添加失败')}
       flashMsg('✅ 已添加');
       showMyAddresses();
     }catch(e){flashMsg('❌ '+e.message)}
@@ -1004,7 +1005,8 @@ function editAddress(id,oldName,oldPhone,oldAddr,oldDetail){
   const detail=prompt('详细地址',oldDetail)||'';
   (async()=>{
     try{
-      await fetch(`/api/user/addresses/${id}`,{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+userToken},body:JSON.stringify({name,phone,address:addr,detail})});
+      const r=await fetch(`/api/user/addresses/${id}`,{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+userToken},body:JSON.stringify({name,phone,address:addr,detail})});
+      if(!r.ok){const e=await r.json();throw new Error(e.detail||'更新失败')}
       flashMsg('✅ 已更新');
       showMyAddresses();
     }catch(e){flashMsg('❌ '+e.message)}
@@ -1013,7 +1015,8 @@ function editAddress(id,oldName,oldPhone,oldAddr,oldDetail){
 async function delAddress(id){
   if(!confirm('删除这个地址？'))return;
   try{
-    await fetch(`/api/user/addresses/${id}`,{method:'DELETE',headers:{'Authorization':'Bearer '+userToken}});
+    const r=await fetch(`/api/user/addresses/${id}`,{method:'DELETE',headers:{'Authorization':'Bearer '+userToken}});
+    if(!r.ok){const e=await r.json();throw new Error(e.detail||'删除失败')}
     flashMsg('🗑 已删除');
     showMyAddresses();
   }catch(e){flashMsg('❌ '+e.message)}
@@ -1031,7 +1034,7 @@ async function toggleFavorite(catId,itemId,itemName){
       await fetch(`/api/user/favorites/${itemId}`,{method:'DELETE',headers:{'Authorization':'Bearer '+userToken}});
       favorites.splice(idx,1);
     }else{
-      await fetch('/api/user/favorites',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+userToken},body:JSON.stringify({category_id:catId,item_id:itemId,item_name:itemName})});
+      await fetch(`/api/user/favorites/${itemId}`,{method:'POST',headers:{'Authorization':'Bearer '+userToken}});
       favorites.push({category_id:catId,item_id:itemId,item_name:itemName});
     }
     // Re-render if in shop or categories
