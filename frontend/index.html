@@ -860,7 +860,7 @@ function renderMyPage(){
           <span style="font-size:12px;color:var(--accent-dark);cursor:pointer" onclick="showMyOrders()">查看全部 ›</span>
         </div>
         <div style="display:flex;gap:4px;font-size:11px">
-          ${[['pending','⏳ 待付款'],['paid','💰 待发货'],['shipped','📦 待收货'],['completed','✅ 已完成'],['cancelled','❌ 售后']].map(([k,v])=>`<div style="flex:1;text-align:center;padding:8px 2px;cursor:pointer;border-radius:8px" onclick="showMyOrders('${k}')">${v}</div>`).join('')}
+          ${[['pending','⏳ 待付款'],['paid','💰 待发货'],['shipped','📦 待收货'],['completed','✅ 待使用'],['cancelled','❌ 售后']].map(([k,v])=>`<div style="flex:1;text-align:center;padding:8px 2px;cursor:pointer;border-radius:8px" onclick="showMyOrders('${k}')">${v}</div>`).join('')}
         </div>
       </div>
       <!-- 收藏 + 地址板块 -->
@@ -895,12 +895,16 @@ async function showMyOrders(filterStatus){
   el.innerHTML='<div class="my-page" style="padding-top:8px"><div class="loading">加载中...</div></div>';
   try{
     const orders=await fetchUserOrders(filterStatus);
-    const statusLabel={pending:'⏳ 待付款',paid:'💰 待发货',shipped:'📦 待收货',completed:'✅ 已完成',cancelled:'❌ 已取消'};
+    const statusTabs=[['','📋 全部'],['pending','⏳ 待付款'],['paid','💰 待发货'],['shipped','📦 待收货'],['completed','✅ 待使用'],['cancelled','❌ 售后']];
+    const statusLabel={pending:'⏳ 待付款',paid:'💰 待发货',shipped:'📦 待收货',completed:'✅ 待使用',cancelled:'❌ 售后'};
     el.innerHTML=`
       <div class="my-page" style="padding-top:8px">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
           <button class="btn-text" onclick="renderMyPage()">← 返回</button>
           <span style="font-size:15px;font-weight:600">我的订单</span>
+        </div>
+        <div style="display:flex;gap:4px;margin-bottom:12px;font-size:11px">
+          ${statusTabs.map(([k,v])=>`<div style="flex:1;text-align:center;padding:8px 2px;cursor:pointer;border-radius:8px;background:${(filterStatus||'')===k?'var(--accent-soft)':'var(--bg-card)'};font-weight:${(filterStatus||'')===k?'600':'normal'}" onclick="showMyOrders('${k}')">${v}</div>`).join('')}
         </div>
         ${orders.length?orders.map(o=>`
           <div style="background:var(--bg-card);border-radius:12px;padding:12px;margin-bottom:8px">
