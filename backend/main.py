@@ -196,7 +196,7 @@ class CreateOrder(BaseModel):
 class MenuUpdate(BaseModel):
     name: Optional[str] = None; description: Optional[str] = None
     price: Optional[float] = None; badge: Optional[str] = None
-    is_available: Optional[bool] = None
+    is_available: Optional[bool] = None; category_id: Optional[str] = None
 
 # ============================================
 # CLIENT API
@@ -348,6 +348,7 @@ def update_menu_item(item_id: str, update: MenuUpdate, _=Depends(check_admin)):
             fields["price"] = update.price
         if update.badge is not None: fields["badge"] = update.badge
         if update.is_available is not None: fields["is_available"] = 1 if update.is_available else 0
+        if update.category_id is not None: fields["category_id"] = update.category_id
         if not fields: raise HTTPException(400, "没有要更新的字段")
         sets = ", ".join(f"{k}=?" for k in fields)
         db.execute(f"UPDATE menu_items SET {sets} WHERE id=?", list(fields.values())+[item_id])

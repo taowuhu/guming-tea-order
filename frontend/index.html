@@ -1043,7 +1043,7 @@ function isFavorited(itemId){
   return favorites.some(f=>f.item_id===itemId);
 }
 async function toggleFavorite(catId,itemId,itemName){
-  if(!currentUser){flashMsg('请先登录');return}
+  if(!currentUser){needLogin();return}
   const idx=favorites.findIndex(f=>f.item_id===itemId);
   try{
     if(idx>=0){
@@ -1394,6 +1394,9 @@ function renderAdminPanel(){
         </div>
       </div>
       <input value="${escHtml(it.description)}" data-field="description" data-id="${it.id}" placeholder="描述" style="width:100%;margin-bottom:6px">
+      <select data-field="category_id" data-id="${it.id}" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:8px;font-size:13px;margin-bottom:6px;font-family:var(--font)">
+        ${adminCats.map(c=>`<option value="${c.id}" ${(it.category_id||'')===c.id?'selected':''}>${c.name}</option>`).join('')}
+      </select>
       <div class="admin-actions">
         <button class="primary" onclick="saveItem('${it.id}')">💾 保存</button>
         <button onclick="openUpload('${it.id}')">📷 换图</button>
@@ -1411,9 +1414,10 @@ async function saveItem(itemId){
   const price=parseFloat(item.querySelector('[data-field=price]').value);
   const badge=item.querySelector('[data-field=badge]').value;
   const desc=item.querySelector('[data-field=description]').value.trim();
+  const catId=item.querySelector('[data-field=category_id]').value;
   if(!name||isNaN(price)){flashMsg('请填写名称和有效价格');return}
   try{
-    await adminApi(`/api/admin/menu-items/${itemId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,description:desc,price,badge})});
+    await adminApi(`/api/admin/menu-items/${itemId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,description:desc,price,badge,category_id:catId})});
     flashMsg('✅ 已保存');
     const orig=adminItems.find(x=>x.id===itemId);if(orig){orig.name=name;orig.description=desc;orig.price=price;orig.badge=badge}
   }catch(e){flashMsg('❌ '+e.message)}
