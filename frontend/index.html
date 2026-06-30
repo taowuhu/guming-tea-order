@@ -1394,8 +1394,8 @@ function renderAdminPanel(){
     `<div class="cat-row"><span style="width:60px;font-size:13px">🖼️ Banner</span><input id="cfgBanner" placeholder="Banner图片URL" class="cat-name-input" style="font-size:12px"> <button class="btn-text" onclick="savePayCfg()" style="color:var(--accent-dark)">💾</button></div>`+
     `<div class="cat-row"><span style="width:60px;font-size:13px">📍 地址</span><input id="cfgAddr" placeholder="店铺地址" class="cat-name-input" style="font-size:12px"> <button class="btn-text" onclick="savePayCfg()" style="color:var(--accent-dark)">💾</button></div>`+
     `<div class="cat-row"><span style="width:60px;font-size:13px">📞 电话</span><input id="cfgPhone" placeholder="如 13800000000" class="cat-name-input" style="font-size:12px"> <button class="btn-text" onclick="savePayCfg()" style="color:var(--accent-dark)">💾</button></div>`+
-    `<div class="cat-row"><span style="width:60px;font-size:13px">💙 支付宝</span><input id="cfgAlipay" placeholder="付款链接" class="cat-name-input" style="font-size:12px"> <button class="btn-text" onclick="savePayCfg()" style="color:var(--accent-dark)">💾</button></div>`+
-    `<div class="cat-row"><span style="width:60px;font-size:13px">💚 微信</span><input id="cfgWechat" placeholder="付款链接" class="cat-name-input" style="font-size:12px"> <button class="btn-text" onclick="savePayCfg()" style="color:var(--accent-dark)">💾</button></div>`+
+    `<div class="cat-row"><span style="width:60px;font-size:13px">💙 支付宝</span><input id="cfgAlipay" placeholder="付款链接" class="cat-name-input" style="font-size:12px"> <button class="btn-text" onclick="uploadPayQR('cfgAlipay')" title="上传收款码">📷</button> <button class="btn-text" onclick="savePayCfg()" style="color:var(--accent-dark)">💾</button></div>`+
+    `<div class="cat-row"><span style="width:60px;font-size:13px">💚 微信</span><input id="cfgWechat" placeholder="付款链接" class="cat-name-input" style="font-size:12px"> <button class="btn-text" onclick="uploadPayQR('cfgWechat')" title="上传收款码">📷</button> <button class="btn-text" onclick="savePayCfg()" style="color:var(--accent-dark)">💾</button></div>`+
     `</div>`+
     adminItems.map(it=>`
     <div class="admin-item${it.is_available?'':' unavailable'}" id="admin-item-${it.id}">
@@ -1690,6 +1690,24 @@ function saveOptInline(id,field,value,itemId){
 async function delOptInline(id,itemId){
   if(!confirm('删除这个选项？'))return;
   try{await adminApi('/api/admin/options/'+id,{method:'DELETE'});showItemOptions(itemId)}catch(e){flashMsg('❌ '+e.message)}
+}
+
+// Upload payment QR code
+function uploadPayQR(targetId){
+  const input=document.createElement('input');
+  input.type='file';input.accept='image/*';
+  input.onchange=async()=>{
+    const file=input.files[0];if(!file)return;
+    const fd=new FormData();fd.append('file',file);
+    try{
+      const r=await fetch('/api/admin/upload-image',{method:'POST',headers:{'Authorization':'Bearer '+adminToken},body:fd});
+      if(!r.ok)throw new Error('上传失败');
+      const d=await r.json();
+      document.getElementById(targetId).value=d.url;
+      flashMsg('✅ 收款码已上传');
+    }catch(e){flashMsg('❌ '+e.message)}
+  };
+  input.click();
 }
 
 // Flash message
