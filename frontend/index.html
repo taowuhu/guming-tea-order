@@ -1246,13 +1246,19 @@ function renderCartDrawer(){
 }
 
 async function checkout(){
-  if(!cart.length)return;
+  if(!cart.length)return;const tot=cartTotal(),cnt=cartCount();
   if(!currentUser){
-    needLogin();
-    flashMsg('请先登录再下单，方便查看订单进度');
+    // Show login prompt but allow continuing
+    showToast('⚠️','未登录下单','订单将不会出现在「我的订单」中',
+      '<button class="btn-checkout" style="margin-top:12px;width:100%" onclick="this.closest(\'.order-toast\')?.remove();document.body.style.overflow=\'\';needLogin()">先去登录</button>'+
+      '<button class="btn-checkout" style="margin-top:8px;width:100%;background:#555" onclick="this.closest(\'.order-toast\')?.remove();document.body.style.overflow=\'\';doCheckout()">继续下单（不登录）</button>');
     return;
   }
-  // Step 1: Show payment first
+  doCheckout();
+}
+
+async function doCheckout(){
+  const tot=cartTotal(),cnt=cartCount();
   const pay=await api('/api/payment');
   const hasPay=pay.alipay||pay.wechat;
   const orderSummary=cart.map(it=>it.name+' ×'+it.qty).join('、');
